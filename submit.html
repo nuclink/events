@@ -1,68 +1,22 @@
-<form id="conferenceForm">
-  会议名称:<br>
-  <input type="text" name="title" required style="width:100%;"><br><br>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>提交核物理会议</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    iframe { width: 100%; height: 800px; border: none; }
+    p { font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>📩 提交核物理会议</h1>
+  <p>欢迎提交国内外核物理相关会议。请通过下面的问卷提交信息，我们会在审核后更新网站。</p>
 
-  地点:<br>
-  <input type="text" name="location" required style="width:100%;"><br><br>
+  <!-- 嵌入腾讯问卷 -->
+  <iframe src="https://wj.qq.com/s2/26029220/ac06/" scrolling="yes"></iframe>
 
-  开始日期:<br>
-  <input type="date" name="start_date" required><br><br>
-
-  结束日期:<br>
-  <input type="date" name="end_date" required><br><br>
-
-  官方网站:<br>
-  <input type="url" name="link" required style="width:100%;"><br><br>
-
-  备注（可选）:<br>
-  <textarea name="note" style="width:100%; height:100px;"></textarea><br><br>
-
-  <button type="submit" style="padding:10px 20px;">提交会议</button>
-</form>
-
-<script>
-document.getElementById("conferenceForm").addEventListener("submit", async function(e){
-  e.preventDefault();
-
-  const data = {
-    title: this.title.value,
-    location: this.location.value,
-    start_date: this.start_date.value,
-    end_date: this.end_date.value,
-    link: this.link.value,
-    note: this.note.value
-  };
-
-  // 把数据转换成 YAML
-  const yamlData = `
-- title: ${data.title}
-  location: ${data.location}
-  start_date: ${data.start_date}
-  end_date: ${data.end_date}
-  link: ${data.link}
-  note: ${data.note || ""}
-`;
-
-  // 安全触发 GitHub Actions workflow
-  try {
-    const response = await fetch("/.netlify/functions/submitConference", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ CONFERENCE_YAML: yamlData })
-    });
-
-    if (response.ok) {
-      document.getElementById("message").innerText = "数据已提交，等待审核上线！";
-      this.reset();
-    } else {
-      document.getElementById("message").innerText = "提交失败，请联系管理员";
-      console.error(await response.text());
-    }
-  } catch(err) {
-    document.getElementById("message").innerText = "提交失败，请检查网络";
-    console.error(err);
-  }
-});
-</script>
+  <p>如果无法显示问卷，请点击 <a href="https://wj.qq.com/s2/26029220/ac06/" target="_blank">这里填写问卷</a></p>
+</body>
+</html>
