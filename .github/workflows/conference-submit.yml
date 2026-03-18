@@ -1,0 +1,27 @@
+name: Conference Submission PR
+
+on:
+  repository_dispatch:
+    types: [submit_conference]
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Add conference to YAML
+        run: |
+          mkdir -p _data
+          FILE="_data/conferences.yml"
+          echo "$CONFERENCE_YAML" >> $FILE
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add new conference submission"
+          branch: submission-${{ github.run_id }}
+          title: "New Conference Submission"
+          body: "自动生成的会议提交，请审核"
