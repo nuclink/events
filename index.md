@@ -12,7 +12,6 @@ title: 核物理会议信息
     <th>会议名称</th>
     <th>地点</th>
     <th>时间</th>
-    <th>投稿截止</th>
     <th>官网</th>
   </tr>
   {% for conf in site.data.conferences %}
@@ -20,7 +19,6 @@ title: 核物理会议信息
     <td>{{ conf.title }}</td>
     <td>{{ conf.location }}</td>
     <td>{{ conf.start_date }} - {{ conf.end_date }}</td>
-    <td>{{ conf.deadline }}</td>
     <td><a href="{{ conf.link }}">官网</a></td>
   </tr>
   {% endfor %}
