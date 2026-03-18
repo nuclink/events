@@ -20,9 +20,6 @@ title: 提交会议
   结束日期:<br>
   <input type="date" name="end_date" required><br><br>
 
-  投稿截止日期:<br>
-  <input type="date" name="deadline"><br><br>
-
   官方网站:<br>
   <input type="url" name="link" required style="width:100%;"><br><br>
 
