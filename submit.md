@@ -37,7 +37,7 @@ title: 提交会议
 <script>
 document.getElementById("conferenceForm").addEventListener("submit", async function(e){
   e.preventDefault();
-  // 获取表单数据
+
   const data = {
     title: this.title.value,
     location: this.location.value,
@@ -47,11 +47,38 @@ document.getElementById("conferenceForm").addEventListener("submit", async funct
     link: this.link.value,
     note: this.note.value
   };
-  
-  // 这里我们先做“测试”，提交到浏览器控制台
-  console.log("提交数据:", data);
-  
-  document.getElementById("message").innerText = "数据已提交，等待审核上线！";
-  this.reset();
+
+  // 把数据转换成 YAML
+  const yamlData = `
+- title: ${data.title}
+  location: ${data.location}
+  start_date: ${data.start_date}
+  end_date: ${data.end_date}
+  deadline: ${data.deadline || ""}
+  link: ${data.link}
+  note: ${data.note || ""}
+`;
+
+  // 安全触发 GitHub Actions workflow
+  try {
+    const response = await fetch("/.netlify/functions/submitConference", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ CONFERENCE_YAML: yamlData })
+    });
+
+    if (response.ok) {
+      document.getElementById("message").innerText = "数据已提交，等待审核上线！";
+      this.reset();
+    } else {
+      document.getElementById("message").innerText = "提交失败，请联系管理员";
+      console.error(await response.text());
+    }
+  } catch(err) {
+    document.getElementById("message").innerText = "提交失败，请检查网络";
+    console.error(err);
+  }
 });
 </script>
