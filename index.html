@@ -23,7 +23,7 @@
   </table>
 
   <script>
-    fetch("data/conferences.json")
+    fetch("conferences.json")
       .then(response => response.json())
       .then(conferences => {
         const table = document.getElementById("conferenceTable");
