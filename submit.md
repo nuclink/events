@@ -40,7 +40,6 @@ document.getElementById("conferenceForm").addEventListener("submit", async funct
     location: this.location.value,
     start_date: this.start_date.value,
     end_date: this.end_date.value,
-    deadline: this.deadline.value,
     link: this.link.value,
     note: this.note.value
   };
@@ -51,7 +50,6 @@ document.getElementById("conferenceForm").addEventListener("submit", async funct
   location: ${data.location}
   start_date: ${data.start_date}
   end_date: ${data.end_date}
-  deadline: ${data.deadline || ""}
   link: ${data.link}
   note: ${data.note || ""}
 `;
