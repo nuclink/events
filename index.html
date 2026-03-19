@@ -3,32 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <title>核物理会议信息</title>
+
   <style>
     body {
       font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      background: #f5f7fa;
+      background: #eef2f7;
       margin: 0;
-      padding: 0;
+    }
+
+    /* 顶部栏（类似APS） */
+    .header {
+      background: #1f2d3d;
+      color: white;
+      padding: 18px 40px;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .sub-header {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 5px;
     }
 
     .container {
-      max-width: 1000px;
-      margin: 40px auto;
+      max-width: 1100px;
+      margin: 30px auto;
       background: white;
       padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     }
 
     h1 {
-      text-align: center;
-      margin-bottom: 25px;
+      text-align: left;
+      margin-bottom: 20px;
       color: #1a2a3a;
-      font-size: 40px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
+      font-size: 32px;
+      font-weight: 700;
+      border-left: 5px solid #3498db;
+      padding-left: 12px;
     }
 
+    /* 工具栏 */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -40,45 +58,47 @@
       text-decoration: none;
       background: #3498db;
       color: white;
-      padding: 8px 16px;
-      border-radius: 6px;
-      transition: 0.3s;
+      padding: 8px 18px;
+      border-radius: 5px;
       font-size: 14px;
+      transition: 0.25s;
     }
 
     .submit-btn:hover {
-      background: #2980b9;
+      background: #217dbb;
     }
 
+    /* 表格（数据库风格） */
     table {
-      border-collapse: collapse;
       width: 100%;
-      overflow: hidden;
-      border-radius: 8px;
+      border-collapse: collapse;
+      font-size: 15px;
     }
 
-    th, td {
-      padding: 12px 10px;
-      text-align: center;
+    thead {
+      background: #f0f4f8;
+      border-bottom: 2px solid #d6dde6;
     }
 
     th {
-      background-color: #3498db;
-      color: white;
-      font-weight: 500;
+      padding: 12px;
+      text-align: left;
+      color: #2c3e50;
+      font-weight: 600;
     }
 
-    tr:nth-child(even) {
-      background-color: #f9fbfd;
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e5eaf0;
+      color: #34495e;
     }
 
     tr:hover {
-      background-color: #eef6ff;
-      transition: 0.2s;
+      background: #f8fbff;
     }
 
     td a {
-      color: #3498db;
+      color: #2c7be5;
       text-decoration: none;
       font-weight: 500;
     }
@@ -87,20 +107,52 @@
       text-decoration: underline;
     }
 
+    /* 状态标签（时间增强） */
+    .tag {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .upcoming {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .past {
+      background: #fbe9e7;
+      color: #c62828;
+    }
+
+    /* 页脚 */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      margin-top: 20px;
+    }
+
     /* 响应式 */
     @media (max-width: 768px) {
       .container {
         padding: 20px;
       }
 
-      table, th, td {
-        font-size: 14px;
+      table {
+        font-size: 13px;
       }
     }
   </style>
 </head>
 
 <body>
+
+  <div class="header">
+    Nuclear Physics Database
+    <div class="sub-header">Conference & Workshop Index</div>
+  </div>
+
   <div class="container">
     <h1>核物理会议列表</h1>
 
@@ -110,13 +162,20 @@
     </div>
 
     <table id="conferenceTable">
-      <tr>
-        <th>会议名称</th>
-        <th>地点</th>
-        <th>时间</th>
-        <th>官网</th>
-      </tr>
+      <thead>
+        <tr>
+          <th>会议名称</th>
+          <th>地点</th>
+          <th>时间</th>
+          <th>状态</th>
+          <th>官网</th>
+        </tr>
+      </thead>
     </table>
+
+    <div class="footer">
+      Data-driven conference index for nuclear physics community
+    </div>
   </div>
 
   <script>
@@ -124,18 +183,34 @@
       .then(response => response.json())
       .then(conferences => {
         const table = document.getElementById("conferenceTable");
+
+        const today = new Date();
+
         conferences.forEach(conf => {
           const row = document.createElement("tr");
+
+          const endDate = new Date(conf.end_date);
+
+          let status = "";
+          if (endDate >= today) {
+            status = '<span class="tag upcoming">进行中 / 即将</span>';
+          } else {
+            status = '<span class="tag past">已结束</span>';
+          }
+
           row.innerHTML = `
-            <td>${conf.title}</td>
+            <td><strong>${conf.title}</strong></td>
             <td>${conf.location}</td>
-            <td>${conf.start_date} - ${conf.end_date}</td>
-            <td><a href="${conf.link}" target="_blank">官网链接</a></td>
+            <td>${conf.start_date} — ${conf.end_date}</td>
+            <td>${status}</td>
+            <td><a href="${conf.link}" target="_blank">Visit</a></td>
           `;
+
           table.appendChild(row);
         });
       })
       .catch(err => console.error("加载会议列表失败:", err));
   </script>
+
 </body>
 </html>
