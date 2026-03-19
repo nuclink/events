@@ -140,49 +140,37 @@ function getStatus(start, end) {
   return '<span class="tag past">已结束</span>';
 }
 
-function renderLabels() {
-  clearLabels();
+function renderTable(data) {
+  const table = document.getElementById("conferenceTable");
 
-  let used = [];
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>会议名称</th>
+        <th>地点</th>
+        <th>
+          时间
+          <span class="sort-btn" onclick="sortByDate(true)">🔼</span>
+          <span class="sort-btn" onclick="sortByDate(false)">🔽</span>
+        </th>
+        <th>状态</th>
+        <th>官网</th>
+      </tr>
+    </thead>
+  `;
 
-  points.forEach(p => {
-    const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
+  data.forEach(c => {
+    const row = document.createElement("tr");
 
-    let x = pos[0];
-    let y = pos[1];
+    row.innerHTML = `
+      <td><strong>${c.title}</strong></td>
+      <td>${c.location}</td>
+      <td>${c.start_date} — ${c.end_date}</td>
+      <td>${getStatus(c.start_date, c.end_date)}</td>
+      <td><a href="${c.link}" target="_blank">Visit</a></td>
+    `;
 
-    // ===== 避让 =====
-    for (let u of used) {
-      const dx = u.x - x;
-      const dy = u.y - y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 90) y += 20;
-    }
-
-    used.push({ x, y });
-
-    const group = new echarts.graphic.Group();
-
-    const text = new echarts.graphic.Text({
-      style: {
-        x: x,
-        y: y,
-        text: `${geoCoordToName(p.value)}\n${p.name}\n${p.time.split("—")[0].trim()}`,
-        font: "bold 15px Microsoft YaHei",
-        fill: "#111",
-        lineHeight: 20,
-        textAlign: "center",
-        textVerticalAlign: "middle",
-        textShadowBlur: 3,
-        textShadowColor: "#fff"
-      }
-    });
-
-    group.add(text);
-    zr.add(group);
-
-    // ⭐ 记录引用
-    labelGroups.push(group);
+    table.appendChild(row);
   });
 }
 
@@ -213,11 +201,9 @@ function initMap(data) {
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
-  // ===== 去重（防止重复标签）=====
   const uniqueMap = {};
   latest.forEach(c => {
-    const key = `${c.title}-${c.location}-${c.start_date}`;
-    if (!uniqueMap[key]) uniqueMap[key] = c;
+    if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
   });
 
   const uniqueData = Object.values(uniqueMap);
@@ -241,13 +227,10 @@ function initMap(data) {
 
     points.push({
       name: c.title,
-      location: c.location,
       value: coord,
       time: `${c.start_date} — ${c.end_date}`,
       labelPos: outside
     });
-
-    const color = colors[i % colors.length];
 
     lineSeries.push({
       type: "lines",
@@ -257,7 +240,7 @@ function initMap(data) {
       }],
       lineStyle: {
         width: 2,
-        color: color
+        color: colors[i % colors.length]
       }
     });
   });
@@ -265,7 +248,7 @@ function initMap(data) {
   chart.setOption({
     geo: {
       map: "china",
-      roam: true,   // ✅ 允许缩放
+      roam: false,   // ✅ 禁止缩放拖动
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -279,31 +262,19 @@ function initMap(data) {
         type: "scatter",
         coordinateSystem: "geo",
         symbolSize: 8,
-        data: points,
         itemStyle: {
-          color: function (params) {
-            return colors[params.dataIndex % colors.length];
-          }
-        }
+          color: "#2c7be5"
+        },
+        data: points
       }
     ]
   });
 
-  // ===== 标签系统 =====
+  // ===== 标签（避免重叠）=====
   const zr = chart.getZr();
 
   function clearLabels() {
     zr.storage._displayList = [];
-  }
-
-  function geoCoordToName(coord) {
-    for (let key in geoCoordMap) {
-      const val = geoCoordMap[key];
-      if (val[0] === coord[0] && val[1] === coord[1]) {
-        return key;
-      }
-    }
-    return "";
   }
 
   function renderLabels() {
@@ -317,45 +288,46 @@ function initMap(data) {
       let x = pos[0];
       let y = pos[1];
 
-      // ===== 避免重叠 =====
       for (let u of used) {
         const dx = u.x - x;
         const dy = u.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 90) y += 20;
+
+        if (dist < 80) y += 20;
       }
 
       used.push({ x, y });
 
       const group = new echarts.graphic.Group();
 
-      const text = new echarts.graphic.Text({
+      const rect = new echarts.graphic.Rect({
+        shape: { x, y, width: 220, height: 50 },
         style: {
-          x: x,
-          y: y,
-          text: `${geoCoordToName(p.value)}\n${p.name}\n${p.time.split("—")[0].trim()}`,
-          font: "bold 15px Microsoft YaHei",
-          fill: "#111",
-          lineHeight: 20,
-          textAlign: "center",
-          textVerticalAlign: "middle",
-          textShadowBlur: 3,
-          textShadowColor: "#fff"
+          fill: "rgba(255,255,255,0.95)",
+          stroke: "#ccc",
+          lineWidth: 1
         }
       });
 
+      const text = new echarts.graphic.Text({
+        style: {
+          x: x + 8,
+          y: y + 5,
+          text: `${p.name}\n${p.time}`,
+          font: "bold 14px Microsoft YaHei",
+          fill: "#333",
+          lineHeight: 18
+        }
+      });
+
+      group.add(rect);
       group.add(text);
+
       zr.add(group);
     });
   }
 
-  // ===== 初次渲染 =====
   setTimeout(renderLabels, 200);
-
-  // ===== ⭐关键：缩放/拖动时同步更新 =====
-  chart.on("geoRoam", function () {
-    renderLabels();
-  });
 }
 
 fetch("conferences.json")
