@@ -201,15 +201,15 @@ function initMap(data) {
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
-  // 去重
+  // ===== 去重（防止重复标签）=====
   const uniqueMap = {};
   latest.forEach(c => {
-    if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
+    const key = `${c.title}-${c.location}-${c.start_date}`;
+    if (!uniqueMap[key]) uniqueMap[key] = c;
   });
 
   const uniqueData = Object.values(uniqueMap);
 
-  // ===== 构建点和线 =====
   uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
@@ -229,8 +229,8 @@ function initMap(data) {
 
     points.push({
       name: c.title,
-      value: coord,
       location: c.location,
+      value: coord,
       time: `${c.start_date} — ${c.end_date}`,
       labelPos: outside
     });
@@ -253,7 +253,7 @@ function initMap(data) {
   chart.setOption({
     geo: {
       map: "china",
-      roam: false, // ❗ 禁止缩放拖动
+      roam: true,   // ✅ 允许缩放
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -284,7 +284,6 @@ function initMap(data) {
     zr.storage._displayList = [];
   }
 
-  // 获取地点名称
   function geoCoordToName(coord) {
     for (let key in geoCoordMap) {
       const val = geoCoordMap[key];
@@ -306,21 +305,18 @@ function initMap(data) {
       let x = pos[0];
       let y = pos[1];
 
-      // ===== 避让 =====
+      // ===== 避免重叠 =====
       for (let u of used) {
         const dx = u.x - x;
         const dy = u.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 80) y += 20;
+        if (dist < 90) y += 20;
       }
 
       used.push({ x, y });
 
-      const color = colors[points.indexOf(p) % colors.length];
-
       const group = new echarts.graphic.Group();
 
-      // ===== 三行文本 =====
       const text = new echarts.graphic.Text({
         style: {
           x: x,
@@ -341,7 +337,13 @@ function initMap(data) {
     });
   }
 
+  // ===== 初次渲染 =====
   setTimeout(renderLabels, 200);
+
+  // ===== ⭐关键：缩放/拖动时同步更新 =====
+  chart.on("geoRoam", function () {
+    renderLabels();
+  });
 }
 
 fetch("conferences.json")
