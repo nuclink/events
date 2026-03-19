@@ -198,36 +198,55 @@ function initMap(data) {
   const latest = getLatest(data, 10);
 
   let lines = [];
-  let points = [];
-  let labels = [];
 
   latest.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
-    // 更自然的左右分布（避免上海跑到左边）
-    const isRight = coord[0] < 110; // 根据经度判断
+    const [lon, lat] = coord;
 
-    // 标签位置（尽量贴边）
-    const outside = isRight
-      ? [135, coord[1]]   // 右侧
-      : [65, coord[1]];   // 左侧
+    // --- 动态决定“往哪个方向拉线” ---
+    // 中国大致中心
+    const centerLon = 105;
+    const centerLat = 35;
 
-    // 直线（无弯曲）
+    let dx = lon - centerLon;
+    let dy = lat - centerLat;
+
+    // 归一化方向
+    let len = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= len;
+    dy /= len;
+
+    // 外部延伸长度（控制线长）
+    const extend = 20;
+
+    const outside = [
+      lon + dx * extend,
+      lat + dy * extend
+    ];
+
     lines.push({
-      coords: [coord, outside]
-    });
+      coords: [coord, outside],
 
-    // 地图点
-    points.push({
-      name: c.title,
-      value: coord
-    });
+      // ✔ 在终点直接显示标签
+      label: {
+        show: true,
+        formatter: () => {
+          return `${c.title}\n${c.start_date} — ${c.end_date}`;
+        },
+        position: "end",
+        color: "#222",
+        backgroundColor: "rgba(255,255,255,0.9)",
+        padding: [6, 8],
+        borderRadius: 5,
+        fontSize: 12
+      },
 
-    // 标签数据
-    labels.push({
-      name: c.title,
-      value: outside.concat(`${c.location}\n${c.start_date} — ${c.end_date}`)
+      lineStyle: {
+        width: 1.5,
+        color: "#555"
+      }
     });
   });
 
@@ -242,52 +261,28 @@ function initMap(data) {
     },
 
     series: [
-      // 点
-      {
-        type: "scatter",
-        coordinateSystem: "geo",
-        data: points,
-        symbolSize: 6,
-        itemStyle: {
-          color: "#2c7be5"
-        }
-      },
-
-      // 直线（无动画）
       {
         type: "lines",
         coordinateSystem: "geo",
         zlevel: 2,
-        lineStyle: {
-          width: 1.5,
-          color: "#555",
-          opacity: 0.8
-        },
-        effect: null,   // ❗彻底去掉动画
+
+        // ❗关闭动画
+        effect: null,
+
         data: lines
       },
 
-      // 标签（会议名称 + 时间）
       {
         type: "scatter",
         coordinateSystem: "geo",
-        data: labels,
-        symbol: "none",
-        label: {
-          show: true,
-          formatter: p => {
-            const [name, time] = p.data.value[2].split("\n");
-            return `${name}\n${time}`;
-          },
-          position: "right",
-          align: "left",
-          color: "#222",
-          fontSize: 12,
-          backgroundColor: "rgba(255,255,255,0.9)",
-          padding: [6, 8],
-          borderRadius: 5,
-          distance: 8
-        }
+        symbolSize: 6,
+        itemStyle: {
+          color: "#2c7be5"
+        },
+        data: latest.map(c => ({
+          name: c.title,
+          value: geoCoordMap[c.location]
+        }))
       }
     ]
   });
