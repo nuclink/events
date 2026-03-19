@@ -30,9 +30,7 @@
     }
 
     h1 {
-      text-align: left;
       margin-bottom: 25px;
-      color: #111111;
       font-size: 38px;
       font-weight: 800;
       border-left: 6px solid #2c7be5;
@@ -77,22 +75,20 @@
       background: #f8fbff;
     }
 
-    /* 排序按钮 */
     .sort-btn {
       cursor: pointer;
-      margin-left: 10px;      /* 和“时间”拉开距离 */
-      font-size: 14px;        /* 稍微变大 */
+      margin-left: 10px;
+      font-size: 14px;
       color: #2c7be5;
-      font-weight: 600;       /* 更清晰一点 */
+      font-weight: 600;
       transition: 0.2s;
     }
 
     .sort-btn:hover {
       color: #1a5fd0;
-      transform: scale(1.15); /* 悬停放大一点点 */
+      transform: scale(1.15);
     }
 
-    /* 状态标签 */
     .tag {
       padding: 3px 8px;
       border-radius: 4px;
@@ -114,7 +110,6 @@
       background: #fbe9e7;
       color: #c62828;
     }
-
   </style>
 </head>
 
@@ -132,44 +127,43 @@
     <a href="submit.html" class="submit-btn">+ 提交会议</a>
   </div>
 
-  <table id="conferenceTable">
-    <thead>
-      <tr>
-        <th>会议名称</th>
-        <th>地点</th>
-        <th>
-          时间
-          <span class="sort-btn" onclick="sortByDate(true)">🔼</span>
-          <span class="sort-btn" onclick="sortByDate(false)">🔽</span>
-        </th>
-        <th>状态</th>
-        <th>官网</th>
-      </tr>
-    </thead>
-  </table>
+  <table id="conferenceTable"></table>
+
+  <!-- 地图 -->
+  <div id="map" style="width: 100%; height: 500px; margin-top: 40px;"></div>
 </div>
+
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts/map/js/china.js"></script>
 
 <script>
   let conferenceData = [];
+
+  // 城市坐标
+  const geoCoordMap = {
+    "北京": [116.4074, 39.9042],
+    "上海": [121.4737, 31.2304],
+    "南京": [118.7969, 32.0603],
+    "广州": [113.2644, 23.1291],
+    "西安": [108.9398, 34.3416],
+    "武汉": [114.3055, 30.5928],
+    "成都": [104.0665, 30.5728]
+  };
 
   function getStatus(start, end) {
     const today = new Date();
     const startDate = new Date(start);
     const endDate = new Date(end);
 
-    if (today < startDate) {
-      return '<span class="tag upcoming">即将开始</span>';
-    } else if (today <= endDate) {
-      return '<span class="tag ongoing">进行中</span>';
-    } else {
-      return '<span class="tag past">已结束</span>';
-    }
+    if (today < startDate) return '<span class="tag upcoming">即将开始</span>';
+    else if (today <= endDate) return '<span class="tag ongoing">进行中</span>';
+    else return '<span class="tag past">已结束</span>';
   }
 
   function renderTable(data) {
     const table = document.getElementById("conferenceTable");
 
-    // 清除旧数据（保留表头）
     table.innerHTML = `
       <thead>
         <tr>
@@ -211,11 +205,83 @@
     renderTable(conferenceData);
   }
 
+  function getLatestConferences(data, n = 10) {
+    return [...data]
+      .sort((a, b) => new Date(b.start_date) - new Date(a.start_date))
+      .slice(0, n);
+  }
+
+  function initMap(data) {
+    const chart = echarts.init(document.getElementById("map"));
+    const latest = getLatestConferences(data, 10);
+
+    let points = [];
+    let lines = [];
+
+    latest.forEach(conf => {
+      const coord = geoCoordMap[conf.location];
+      if (!coord) return;
+
+      points.push({
+        name: conf.title,
+        value: coord.concat(`${conf.location}\n${conf.start_date}`)
+      });
+
+      lines.push({
+        coords: [
+          [105, 35],  // 起点（中国中心）
+          coord
+        ]
+      });
+    });
+
+    const option = {
+      geo: {
+        map: "china",
+        roam: true,
+        itemStyle: {
+          areaColor: "#e6f0ff",
+          borderColor: "#999"
+        }
+      },
+      series: [
+        {
+          type: "scatter",
+          coordinateSystem: "geo",
+          data: points,
+          symbolSize: 10,
+          label: {
+            show: true,
+            formatter: p => p.name,
+            position: "right"
+          }
+        },
+        {
+          type: "lines",
+          coordinateSystem: "geo",
+          effect: {
+            show: true,
+            symbol: "arrow",
+            symbolSize: 6
+          },
+          lineStyle: {
+            width: 2,
+            curveness: 0.2
+          },
+          data: lines
+        }
+      ]
+    };
+
+    chart.setOption(option);
+  }
+
   fetch("conferences.json")
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       conferenceData = data;
       renderTable(conferenceData);
+      initMap(conferenceData);
     })
     .catch(err => console.error("加载失败:", err));
 </script>
