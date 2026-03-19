@@ -242,7 +242,7 @@ function initMap(data) {
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
-    const extend = 9;
+    const extend = 15;
 
     const outside = [
       lon + dx * extend,
@@ -298,19 +298,38 @@ function initMap(data) {
 function renderLabels() {
   zr.storage._displayList = [];
 
-  points.forEach((p, i) => {
+  // 👉 按角度排序（保证同方向的点排在一起）
+  const sorted = [...points].sort((a, b) => {
+    const pa = chart.convertToPixel({ geoIndex: 0 }, a.labelPos);
+    const pb = chart.convertToPixel({ geoIndex: 0 }, b.labelPos);
+    return pa[1] - pb[1];
+  });
+
+  let used = [];
+
+  sorted.forEach((p) => {
     let pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
     let x = pos[0];
     let y = pos[1];
 
-    // 🔥 只做“极小”偏移，保持与线的对应关系
-    const offsetStep = 15;
+    // 👉 统一在“外侧方向”排布（关键）
+    const offsetX = (x > chart.getWidth() / 2) ? 1 : -1;
 
-    // 轻微错开，但不脱离线
-    const offsetY = (i % 2 === 0 ? 1 : -1) * offsetStep;
+    let offsetY = 0;
+    const step = 25;
 
+    // 👉 只在“同一侧”做排队
+    for (let u of used) {
+      if (Math.abs(u.x - x) < 200 && Math.abs(u.y - (y + offsetY)) < 60) {
+        offsetY += step;
+      }
+    }
+
+    x += offsetX * 20;
     y += offsetY;
+
+    used.push({ x, y });
 
     const text = new echarts.graphic.Text({
       style: {
@@ -320,7 +339,7 @@ function renderLabels() {
         font: "bold 15px Microsoft YaHei",
         fill: "#111",
         lineHeight: 20,
-        textAlign: "center"
+        textAlign: offsetX > 0 ? "left" : "right"
       }
     });
 
