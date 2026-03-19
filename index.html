@@ -198,12 +198,13 @@ function initMap(data) {
   const latest = getLatest(data, 10);
 
   let lines = [];
+  let labels = [];
   let points = [];
 
   const centerLon = 105;
   const centerLat = 35;
 
-  latest.forEach(c => {
+  latest.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
@@ -216,21 +217,33 @@ function initMap(data) {
     dx /= len;
     dy /= len;
 
-    const extend = 15;
+    const extend = 18;
 
-    let outside = [
-      lon + dx * extend,
-      lat + dy * extend
-    ];
-
-    lines.push({
-      coords: [coord, outside]
-    });
-
-    // ✅ 标签直接放在点上（关键！）
+    // ✅ 真实点（蓝点）
     points.push({
       name: c.title,
-      value: outside,
+      value: coord
+    });
+
+    // ✅ 标签方向（四个方向轮换，防重叠）
+    let angle = (i % 4) * (Math.PI / 2);
+    let ox = Math.cos(angle) * extend;
+    let oy = Math.sin(angle) * extend;
+
+    let labelPos = [
+      lon + ox,
+      lat + oy
+    ];
+
+    // 线
+    lines.push({
+      coords: [coord, labelPos]
+    });
+
+    // 标签
+    labels.push({
+      name: c.title,
+      value: labelPos,
       time: `${c.start_date} — ${c.end_date}`
     });
   });
@@ -246,32 +259,40 @@ function initMap(data) {
     },
 
     series: [
+      // 连接线
       {
         type: "lines",
         coordinateSystem: "geo",
         lineStyle: {
-          width: 1.5,
-          color: "#555"
+          width: 1.2,
+          color: "#666"
         },
         data: lines
       },
 
+      // 蓝点（真实位置）
       {
         type: "scatter",
         coordinateSystem: "geo",
-        data: points,
         symbolSize: 6,
         itemStyle: {
           color: "#2c7be5"
         },
+        data: points
+      },
 
-        // ✅ 关键：在这里加 label
+      // 标签（外扩位置）
+      {
+        type: "scatter",
+        coordinateSystem: "geo",
+        symbol: "none",
+        data: labels,
+
         label: {
           show: true,
           formatter: p => {
             return `{title|${p.data.name}}\n{time|${p.data.time}}`;
           },
-
           rich: {
             title: {
               fontSize: 14,
@@ -279,22 +300,20 @@ function initMap(data) {
               color: "#111"
             },
             time: {
-              fontSize: 13,
-              color: "#333"
+              fontSize: 12,
+              color: "#444"
             }
           },
-
           position: "right",
-          distance: 8,
-
           backgroundColor: "rgba(255,255,255,0.95)",
           padding: [6, 10],
           borderRadius: 5
         },
 
-        // ✅ 自动避让（关键）
+        // ❗关键：强制自动避让（但不是完全保证）
         labelLayout: {
-          hideOverlap: true
+          hideOverlap: false,
+          moveOverlap: "shiftY"
         }
       }
     ]
