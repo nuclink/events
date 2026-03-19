@@ -295,12 +295,13 @@ function initMap(data) {
 
   const zr = chart.getZr();
 
-  function renderLabels() {
+function renderLabels() {
   zr.storage._displayList = [];
 
   let used = [];
 
   points.forEach((p) => {
+    // 👉 关键：始终以“线的终点”为基础
     let pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
     let x = pos[0];
@@ -311,8 +312,8 @@ function initMap(data) {
 
     let offsetY = 0;
 
-    // 🔥 更强的避让机制（不改结构，只增强）
-    for (let k = 0; k < 10; k++) {
+    // 🔥 只允许“小范围调整”，避免跑偏
+    for (let k = 0; k < 6; k++) {
       let conflict = false;
 
       for (let u of used) {
@@ -327,8 +328,8 @@ function initMap(data) {
 
       if (!conflict) break;
 
-      // 上下交替 + 逐步拉开
-      offsetY = (k % 2 === 0 ? 1 : -1) * (k + 1) * 35;
+      // 🔥 关键：轻微错开（不要太大）
+      offsetY = (k % 2 === 0 ? 1 : -1) * (k + 1) * 20;
     }
 
     y += offsetY;
@@ -339,7 +340,7 @@ function initMap(data) {
       style: {
         x,
         y,
-        text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+        text: `${p.location}\n${p.name}\n${p.time}`,
         font: "bold 15px Microsoft YaHei",
         fill: "#111",
         lineHeight: 20,
@@ -350,7 +351,7 @@ function initMap(data) {
     zr.add(text);
   });
 }
-
+  
   setTimeout(renderLabels, 200);
 }
 
