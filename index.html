@@ -201,7 +201,6 @@ function initMap(data) {
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
-  // 去重
   const uniqueMap = {};
   latest.forEach(c => {
     if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
@@ -209,28 +208,23 @@ function initMap(data) {
 
   const uniqueData = Object.values(uniqueMap);
 
-  // ===== 构建点和线 =====
   uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
     const [lon, lat] = coord;
 
-    // 延长方向 = 从中心点向外（基于经纬度方向）
-    const extend = 30 + i * 2;  // 轻微错开，防止重叠
-
-    // 计算“指向外侧”的方向（基于地图中心）
-    const center = [104.0, 35.0]; // 中国大致中心（可微调）
+    const center = [104.0, 35.0];
 
     let dx = lon - center[0];
     let dy = lat - center[1];
 
-    // 归一化
     const len = Math.sqrt(dx * dx + dy * dy) || 1;
     dx /= len;
     dy /= len;
 
-    // 外延点（标签位置）
+    const extend = 25;
+
     const outside = [
       lon + dx * extend,
       lat + dy * extend
@@ -249,9 +243,7 @@ function initMap(data) {
     lineSeries.push({
       type: "lines",
       coordinateSystem: "geo",
-      data: [{
-        coords: [coord, outside]
-      }],
+      data: [{ coords: [coord, outside] }],
       lineStyle: {
         width: 2,
         color: color
@@ -262,79 +254,64 @@ function initMap(data) {
   chart.setOption({
     geo: {
       map: "china",
-      roam: false, // ❗ 禁止缩放拖动
+      roam: false,
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
       }
     },
-
     series: [
       ...lineSeries,
-
       {
         type: "scatter",
         coordinateSystem: "geo",
         symbolSize: 8,
         data: points,
         itemStyle: {
-          color: function (params) {
-            return colors[params.dataIndex % colors.length];
-          }
+          color: (params) => colors[params.dataIndex % colors.length]
         }
       }
     ]
   });
 
-  // ===== 标签系统 =====
   const zr = chart.getZr();
 
-  function clearLabels() {
-    zr.storage._displayList = [];
-  }
-
-  // 获取地点名称
-  function geoCoordToName(coord) {
-    for (let key in geoCoordMap) {
-      const val = geoCoordMap[key];
-      if (val[0] === coord[0] && val[1] === coord[1]) {
-        return key;
-      }
-    }
-    return "";
-  }
-
   function renderLabels() {
-    clearLabels();
+    zr.storage._displayList = [];
 
     let used = [];
 
-    points.forEach(p => {
+    points.forEach((p, idx) => {
       const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
       let x = pos[0];
       let y = pos[1];
 
-      // ===== 避让 =====
+      const boxWidth = 180;
+      const boxHeight = 60;
+
+      let offsetY = 0;
+
       for (let u of used) {
-        const dx = u.x - x;
-        const dy = u.y - y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 80) y += 20;
+        const overlapX = Math.abs(u.x - x) < boxWidth;
+        const overlapY = Math.abs(u.y - (y + offsetY)) < boxHeight;
+
+        if (overlapX && overlapY) {
+          offsetY += (used.indexOf(u) % 2 === 0 ? -1 : 1) * 40;
+        }
       }
 
-      used.push({ x, y });
+      y += offsetY;
 
-      const color = colors[points.indexOf(p) % colors.length];
+      used.push({ x, y, w: boxWidth, h: boxHeight });
 
       const group = new echarts.graphic.Group();
 
-      // ===== 三行文本 =====
       const text = new echarts.graphic.Text({
         style: {
-          x: x,
-          y: y,
-          text: `${geoCoordToName(p.value)}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+          x,
+          y,
+          text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
           font: "bold 15px Microsoft YaHei",
           fill: "#111",
           lineHeight: 20,
@@ -352,7 +329,7 @@ function initMap(data) {
 
   setTimeout(renderLabels, 200);
 }
-  
+
 fetch("conferences.json")
   .then(res => res.json())
   .then(data => {
