@@ -198,7 +198,6 @@ function initMap(data) {
   const latest = getLatest(data, 10);
 
   let lines = [];
-  let labels = [];
   let points = [];
 
   const centerLon = 105;
@@ -228,15 +227,11 @@ function initMap(data) {
       coords: [coord, outside]
     });
 
-    labels.push({
+    // ✅ 标签直接放在点上（关键！）
+    points.push({
       name: c.title,
       value: outside,
       time: `${c.start_date} — ${c.end_date}`
-    });
-
-    points.push({
-      name: c.title,
-      value: coord
     });
   });
 
@@ -264,24 +259,19 @@ function initMap(data) {
       {
         type: "scatter",
         coordinateSystem: "geo",
+        data: points,
         symbolSize: 6,
         itemStyle: {
           color: "#2c7be5"
         },
-        data: points
-      },
 
-      {
-        type: "scatter",
-        coordinateSystem: "geo",
-        symbol: "none",
-        data: labels,
-
+        // ✅ 关键：在这里加 label
         label: {
           show: true,
           formatter: p => {
             return `{title|${p.data.name}}\n{time|${p.data.time}}`;
           },
+
           rich: {
             title: {
               fontSize: 14,
@@ -293,14 +283,16 @@ function initMap(data) {
               color: "#333"
             }
           },
+
           position: "right",
+          distance: 8,
+
           backgroundColor: "rgba(255,255,255,0.95)",
           padding: [6, 10],
-          borderRadius: 5,
-          distance: 10
+          borderRadius: 5
         },
 
-        // ✅ 关键：自动避让（核心）
+        // ✅ 自动避让（关键）
         labelLayout: {
           hideOverlap: true
         }
