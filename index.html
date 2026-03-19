@@ -80,9 +80,16 @@
     /* 排序按钮 */
     .sort-btn {
       cursor: pointer;
-      margin-left: 6px;
-      font-size: 12px;
+      margin-left: 10px;      /* 和“时间”拉开距离 */
+      font-size: 14px;        /* 稍微变大 */
       color: #2c7be5;
+      font-weight: 600;       /* 更清晰一点 */
+      transition: 0.2s;
+    }
+
+    .sort-btn:hover {
+      color: #1a5fd0;
+      transform: scale(1.15); /* 悬停放大一点点 */
     }
 
     /* 状态标签 */
