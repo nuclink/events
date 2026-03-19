@@ -217,7 +217,7 @@ function initMap(data) {
     const [lon, lat] = coord;
 
     // 延长方向 = 从中心点向外（基于经纬度方向）
-    const extend = 25;
+    const extend = 30 + i * 2;  // 轻微错开，防止重叠
 
     // 计算“指向外侧”的方向（基于地图中心）
     const center = [104.0, 35.0]; // 中国大致中心（可微调）
