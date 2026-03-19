@@ -298,48 +298,21 @@ function initMap(data) {
 function renderLabels() {
   zr.storage._displayList = [];
 
-  // 👉 按角度排序（保证同方向的点排在一起）
-  const sorted = [...points].sort((a, b) => {
-    const pa = chart.convertToPixel({ geoIndex: 0 }, a.labelPos);
-    const pb = chart.convertToPixel({ geoIndex: 0 }, b.labelPos);
-    return pa[1] - pb[1];
-  });
-
-  let used = [];
-
-  sorted.forEach((p) => {
-    let pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
-
-    let x = pos[0];
-    let y = pos[1];
-
-    // 👉 统一在“外侧方向”排布（关键）
-    const offsetX = (x > chart.getWidth() / 2) ? 1 : -1;
-
-    let offsetY = 0;
-    const step = 25;
-
-    // 👉 只在“同一侧”做排队
-    for (let u of used) {
-      if (Math.abs(u.x - x) < 200 && Math.abs(u.y - (y + offsetY)) < 60) {
-        offsetY += step;
-      }
-    }
-
-    x += offsetX * 20;
-    y += offsetY;
-
-    used.push({ x, y });
+  points.forEach((p) => {
+    const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
     const text = new echarts.graphic.Text({
       style: {
-        x,
-        y,
+        x: pos[0],
+        y: pos[1],
         text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
         font: "bold 15px Microsoft YaHei",
         fill: "#111",
         lineHeight: 20,
-        textAlign: offsetX > 0 ? "left" : "right"
+
+        // 👉 关键：让“文字中心”对齐线的终点
+        textAlign: "center",
+        textVerticalAlign: "middle"
       }
     });
 
