@@ -12,12 +12,12 @@
     "start_date": "2026-03-18",
     "end_date": "2026-03-23",
     "link": "https://example.com"
-  }
+  },
   {
     "title": "核反应研讨会",
     "location": "上海",
     "start_date": "2026-04-11",
     "end_date": "2026-04-16",
     "link": "https://example.com"
-  }
+  },
 ]
