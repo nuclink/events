@@ -199,49 +199,42 @@ function initMap(data) {
 
   let lines = [];
   let points = [];
-  let labels = [];
 
-  const centerLon = 105;
-  const centerLat = 35;
-
-  latest.forEach((c, i) => {
+  // 先构造基础数据
+  latest.forEach(c => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
-    const [lon, lat] = coord;
+    points.push({
+      name: c.title,
+      value: coord,
+      time: `${c.start_date} — ${c.end_date}`
+    });
+  });
 
-    let dx = lon - centerLon;
-    let dy = lat - centerLat;
+  // 画线
+  points.forEach((p, i) => {
+    const [lon, lat] = p.value;
+
+    let dx = lon - 105;
+    let dy = lat - 35;
 
     let len = Math.sqrt(dx * dx + dy * dy) || 1;
     dx /= len;
     dy /= len;
 
-    // ✅ 更大外扩（确保在地图外）
-    const extend = 25;
+    const extend = 20;
 
     let outside = [
       lon + dx * extend,
       lat + dy * extend
     ];
 
-    // 👉 线（从点到外部）
     lines.push({
-      coords: [coord, outside]
+      coords: [p.value, outside]
     });
 
-    // 👉 蓝色点（真实位置）
-    points.push({
-      name: c.title,
-      value: coord
-    });
-
-    // 👉 标签点（外部位置）
-    labels.push({
-      name: c.title,
-      value: outside,
-      time: `${c.start_date} — ${c.end_date}`
-    });
+    p.labelPos = outside; // 存标签位置
   });
 
   chart.setOption({
@@ -255,7 +248,7 @@ function initMap(data) {
     },
 
     series: [
-      // ✅ 线
+      // 线
       {
         type: "lines",
         coordinateSystem: "geo",
@@ -266,7 +259,7 @@ function initMap(data) {
         data: lines
       },
 
-      // ✅ 蓝色点（真实位置）
+      // 点
       {
         type: "scatter",
         coordinateSystem: "geo",
@@ -275,55 +268,81 @@ function initMap(data) {
           color: "#2c7be5"
         },
         data: points
-      },
-
-      // ❗标签层（关键修复）
-      {
-        type: "scatter",
-        coordinateSystem: "geo",
-
-        // ✅ 必须要有 symbol（否则 label 可能不显示）
-        symbol: "circle",
-        symbolSize: 1,
-        itemStyle: {
-          opacity: 0 // 让点“不可见”
-        },
-
-        data: labels,
-
-        label: {
-          show: true,
-          formatter: p => {
-            return `{title|${p.data.name}}\n{time|${p.data.time}}`;
-          },
-
-          rich: {
-            title: {
-              fontSize: 14,
-              fontWeight: "bold",
-              color: "#111"
-            },
-            time: {
-              fontSize: 12,
-              color: "#333"
-            }
-          },
-
-          position: "right",
-          backgroundColor: "rgba(255,255,255,0.95)",
-          padding: [6, 10],
-          borderRadius: 5,
-          distance: 8
-        },
-
-        // ✅ 自动避让（防重叠）
-        labelLayout: {
-          hideOverlap: false,
-          moveOverlap: "shiftY"
-        }
       }
     ]
   });
+
+  // ===== ✅ 关键：用 DOM/graphic 做标签 =====
+
+  const canvas = chart.getZr(); // ZRender 层
+
+  function renderLabels() {
+    // 清空旧标签
+    chart.getZr().storage._displayList = [];
+
+    let occupied = [];
+
+    points.forEach(p => {
+      const [x, y] = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
+
+      // === 防重叠检测 ===
+      let finalX = x;
+      let finalY = y;
+
+      for (let pos of occupied) {
+        const dx = pos.x - finalX;
+        const dy = pos.y - finalY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 60) {
+          finalY += 20; // 向下避让
+        }
+      }
+
+      occupied.push({ x: finalX, y: finalY });
+
+      // === 创建标签 ===
+      const group = new echarts.graphic.Group();
+
+      const rect = new echarts.graphic.Rect({
+        shape: {
+          x: finalX,
+          y: finalY,
+          width: 220,
+          height: 50
+        },
+        style: {
+          fill: "rgba(255,255,255,0.95)",
+          stroke: "#ccc",
+          lineWidth: 1,
+          shadowBlur: 4,
+          shadowColor: "rgba(0,0,0,0.1)"
+        }
+      });
+
+      const text = new echarts.graphic.Text({
+        style: {
+          x: finalX + 8,
+          y: finalY + 5,
+          text: `${p.name}\n${p.time}`,
+          font: "bold 14px Microsoft YaHei",
+          fill: "#333",
+          lineHeight: 18
+        }
+      });
+
+      group.add(rect);
+      group.add(text);
+
+      chart.getZr().add(group);
+    });
+  }
+
+  // 初次渲染
+  setTimeout(renderLabels, 200);
+
+  // 缩放时重新排布
+  chart.on("geoRoam", renderLabels);
 }
 
 fetch("conferences.json")
