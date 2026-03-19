@@ -242,7 +242,7 @@ function initMap(data) {
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
-    const extend = 25;
+    const extend = 13;
 
     const outside = [
       lon + dx * extend,
@@ -274,11 +274,6 @@ function initMap(data) {
     geo: {
       map: "china",
       roam: false,
-
-      left: "5%",
-      right: "5%",
-      top: "8%",
-      bottom: "15%",  // 👈 关键：给标签留空间
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
