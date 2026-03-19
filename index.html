@@ -218,7 +218,7 @@ function initMap(data) {
     Math.PI,                 
     Math.PI,        
     2 * Math.PI / 3,   
-    0,            
+    4 * Math.PI / 3,            
     Math.PI/3     
   ];
 
@@ -283,7 +283,7 @@ function initMap(data) {
     title: {
       text: "即将召开的5个核物理会议",
       left: "center",
-      top: 2,
+      top: 10,
       textStyle: {
         fontFamily: "Microsoft YaHei, sans-serif",
         fontSize: 38,
@@ -294,6 +294,7 @@ function initMap(data) {
     geo: {
       map: "china",
       roam: false,
+      top: 30,   // 👈 让地图整体往下
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
