@@ -200,41 +200,48 @@ function initMap(data) {
   let lines = [];
   let points = [];
 
-  // 先构造基础数据
+  // ✅ 先去重（防止重复标签）
+  const uniqueMap = {};
   latest.forEach(c => {
+    if (!uniqueMap[c.title]) {
+      uniqueMap[c.title] = c;
+    }
+  });
+
+  const uniqueData = Object.values(uniqueMap);
+
+  // ====== 1. 构建数据 ======
+  uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
+
+    const [lon, lat] = coord;
 
     points.push({
       name: c.title,
       value: coord,
       time: `${c.start_date} — ${c.end_date}`
     });
-  });
 
-  // 画线
-  points.forEach((p, i) => {
-    const [lon, lat] = p.value;
+    // ====== 2. 方向均匀分布（关键）======
+    const angle = (i / uniqueData.length) * 2 * Math.PI;
 
-    let dx = lon - 105;
-    let dy = lat - 35;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
 
-    let len = Math.sqrt(dx * dx + dy * dy) || 1;
-    dx /= len;
-    dy /= len;
+    const extend = 25;
 
-    const extend = 20;
-
-    let outside = [
+    const outside = [
       lon + dx * extend,
       lat + dy * extend
     ];
 
     lines.push({
-      coords: [p.value, outside]
+      coords: [coord, outside]
     });
 
-    p.labelPos = outside; // 存标签位置
+    // 保存标签位置
+    points[points.length - 1].labelPos = outside;
   });
 
   chart.setOption({
@@ -259,7 +266,7 @@ function initMap(data) {
         data: lines
       },
 
-      // 点
+      // 蓝点（真实位置）
       {
         type: "scatter",
         coordinateSystem: "geo",
@@ -272,58 +279,53 @@ function initMap(data) {
     ]
   });
 
-  // ===== ✅ 关键：用 DOM/graphic 做标签 =====
+  // ====== 3. 手动标签（彻底控制，不重叠）======
 
-  const canvas = chart.getZr(); // ZRender 层
+  const zr = chart.getZr();
+
+  function clearLabels() {
+    zr.storage._displayList = [];
+  }
 
   function renderLabels() {
-    // 清空旧标签
-    chart.getZr().storage._displayList = [];
+    clearLabels();
 
-    let occupied = [];
+    let used = [];
 
     points.forEach(p => {
-      const [x, y] = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
+      const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
-      // === 防重叠检测 ===
-      let finalX = x;
-      let finalY = y;
+      let x = pos[0];
+      let y = pos[1];
 
-      for (let pos of occupied) {
-        const dx = pos.x - finalX;
-        const dy = pos.y - finalY;
+      // ====== 碰撞检测（关键）======
+      for (let u of used) {
+        const dx = u.x - x;
+        const dy = u.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 60) {
-          finalY += 20; // 向下避让
+        if (dist < 80) {
+          y += 20; // 向下避让
         }
       }
 
-      occupied.push({ x: finalX, y: finalY });
+      used.push({ x, y });
 
-      // === 创建标签 ===
       const group = new echarts.graphic.Group();
 
       const rect = new echarts.graphic.Rect({
-        shape: {
-          x: finalX,
-          y: finalY,
-          width: 220,
-          height: 50
-        },
+        shape: { x, y, width: 220, height: 50 },
         style: {
           fill: "rgba(255,255,255,0.95)",
           stroke: "#ccc",
-          lineWidth: 1,
-          shadowBlur: 4,
-          shadowColor: "rgba(0,0,0,0.1)"
+          lineWidth: 1
         }
       });
 
       const text = new echarts.graphic.Text({
         style: {
-          x: finalX + 8,
-          y: finalY + 5,
+          x: x + 8,
+          y: y + 5,
           text: `${p.name}\n${p.time}`,
           font: "bold 14px Microsoft YaHei",
           fill: "#333",
@@ -334,14 +336,14 @@ function initMap(data) {
       group.add(rect);
       group.add(text);
 
-      chart.getZr().add(group);
+      zr.add(group);
     });
   }
 
-  // 初次渲染
+  // 初始渲染
   setTimeout(renderLabels, 200);
 
-  // 缩放时重新排布
+  // 缩放/拖动时更新
   chart.on("geoRoam", renderLabels);
 }
 
