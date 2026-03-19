@@ -191,26 +191,27 @@ function getLatest(data, n = 10) {
 
 function initMap(data) {
   const chart = echarts.init(document.getElementById("map"));
-
-  // 取最近10个（保留）
   const latest = getLatest(data, 10);
+
+  let points = [];
+  let lineSeries = [];
 
   const colors = [
     "#e74c3c", "#3498db", "#2ecc71", "#f39c12",
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
-  let points = [];
-  let lineSeries = [];
+  const uniqueMap = {};
+  latest.forEach(c => {
+    if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
+  });
 
-  // ===== 按城市计数（用于空间分散）=====
-  let cityCount = {};
+  const uniqueData = Object.values(uniqueMap);
 
-  // ===== 中心点（用于方向分布）=====
+  // ===== 先计算每个点的角度（基于地理位置）=====
   const center = [104.0, 35.0];
 
-  // ===== 先按“角度”排序（整体美观）=====
-  latest.forEach(c => {
+  uniqueData.forEach(c => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
@@ -220,30 +221,32 @@ function initMap(data) {
     );
   });
 
-  latest.sort((a, b) => a._angle - b._angle);
+  // ===== 按角度排序（关键）=====
+  uniqueData.sort((a, b) => a._angle - b._angle);
 
-  // ===== 逐个绘制 =====
-  latest.forEach((c, i) => {
+  // ===== 再均匀分布角度 =====
+  const N = uniqueData.length;
+
+  uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
-    // ===== 同一城市进行分散 =====
-    if (!cityCount[c.location]) cityCount[c.location] = 0;
+    const [lon, lat] = coord;
 
-    const idx = cityCount[c.location]++;
-    const angleOffset = idx * 0.6;   // 每个会议略微旋转
-    const radius = 20 + idx * 8;     // 每个会议逐渐外扩
+    // 用排序后的 index 来均匀分布
+    const angle = (i / N) * 2 * Math.PI;
 
-    const dx = Math.cos(angleOffset);
-    const dy = Math.sin(angleOffset);
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+
+    const extend = 25;
 
     const outside = [
-      coord[0] + dx * radius,
-      coord[1] + dy * radius
+      lon + dx * extend,
+      lat + dy * extend
     ];
 
-    // ===== 点 =====
-    points.push({
+   points.push({
       name: c.title,
       value: coord,
       location: c.location,
@@ -251,7 +254,6 @@ function initMap(data) {
       labelPos: outside
     });
 
-    // ===== 线 =====
     const color = colors[i % colors.length];
 
     lineSeries.push({
@@ -260,17 +262,15 @@ function initMap(data) {
       data: [{ coords: [coord, outside] }],
       lineStyle: {
         width: 2,
-        color: color,
-        curveness: 0.2   // ⭐让线稍微弯曲，更好看
+        color: color
       }
     });
   });
 
-  // ===== 地图配置 =====
   chart.setOption({
     geo: {
       map: "china",
-      roam: true,
+      roam: false,
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -284,14 +284,12 @@ function initMap(data) {
         symbolSize: 8,
         data: points,
         itemStyle: {
-          color: (params) =>
-            colors[params.dataIndex % colors.length]
+          color: (params) => colors[params.dataIndex % colors.length]
         }
       }
     ]
   });
 
-  // ===== 标签绘制 =====
   const zr = chart.getZr();
 
   function renderLabels() {
@@ -305,24 +303,23 @@ function initMap(data) {
       let x = pos[0];
       let y = pos[1];
 
-      const boxWidth = 200;
-      const boxHeight = 70;
+      const boxWidth = 180;
+      const boxHeight = 60;
 
       let offsetY = 0;
 
-      // ===== 防止标签重叠 =====
       for (let u of used) {
         const overlapX = Math.abs(u.x - x) < boxWidth;
         const overlapY = Math.abs(u.y - (y + offsetY)) < boxHeight;
 
         if (overlapX && overlapY) {
-          offsetY += (idx % 2 === 0 ? -1 : 1) * 45;
+          offsetY += (used.indexOf(u) % 2 === 0 ? -1 : 1) * 40;
         }
       }
 
       y += offsetY;
 
-      used.push({ x, y });
+      used.push({ x, y, w: boxWidth, h: boxHeight });
 
       const group = new echarts.graphic.Group();
 
@@ -330,10 +327,10 @@ function initMap(data) {
         style: {
           x,
           y,
-          text: `${p.location}\n${p.name}\n${p.time}`,
-          font: "bold 16px Microsoft YaHei",
+          text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+          font: "bold 15px Microsoft YaHei",
           fill: "#111",
-          lineHeight: 22,
+          lineHeight: 20,
           textAlign: "center",
           textVerticalAlign: "middle",
           textShadowBlur: 3,
