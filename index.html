@@ -296,7 +296,8 @@ function initMap(data) {
   const zr = chart.getZr();
 
   function renderLabels() {
-    zr.storage._displayList = [];
+    const zr = chart.getZr();
+    zr.clear();
 
     let used = [];
 
