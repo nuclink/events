@@ -298,49 +298,25 @@ function initMap(data) {
 function renderLabels() {
   zr.storage._displayList = [];
 
-  let used = [];
-
-  points.forEach((p) => {
-    // 👉 关键：始终以“线的终点”为基础
+  points.forEach((p, i) => {
     let pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
     let x = pos[0];
     let y = pos[1];
 
-    const boxW = 200;
-    const boxH = 60;
+    // 🔥 只做“极小”偏移，保持与线的对应关系
+    const offsetStep = 15;
 
-    let offsetY = 0;
-
-    // 🔥 只允许“小范围调整”，避免跑偏
-    for (let k = 0; k < 6; k++) {
-      let conflict = false;
-
-      for (let u of used) {
-        if (
-          Math.abs(u.x - x) < boxW &&
-          Math.abs(u.y - (y + offsetY)) < boxH
-        ) {
-          conflict = true;
-          break;
-        }
-      }
-
-      if (!conflict) break;
-
-      // 🔥 关键：轻微错开（不要太大）
-      offsetY = (k % 2 === 0 ? 1 : -1) * (k + 1) * 20;
-    }
+    // 轻微错开，但不脱离线
+    const offsetY = (i % 2 === 0 ? 1 : -1) * offsetStep;
 
     y += offsetY;
-
-    used.push({ x, y });
 
     const text = new echarts.graphic.Text({
       style: {
         x,
         y,
-        text: `${p.location}\n${p.name}\n${p.time}`,
+        text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
         font: "bold 15px Microsoft YaHei",
         fill: "#111",
         lineHeight: 20,
