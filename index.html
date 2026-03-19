@@ -193,11 +193,15 @@ function initMap(data) {
   const chart = echarts.init(document.getElementById("map"));
   const latest = getLatest(data, 10);
 
+  let points = [];
+  let lineSeries = [];
+
   const colors = [
     "#e74c3c", "#3498db", "#2ecc71", "#f39c12",
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
+  // 去重
   const uniqueMap = {};
   latest.forEach(c => {
     if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
@@ -205,9 +209,7 @@ function initMap(data) {
 
   const uniqueData = Object.values(uniqueMap);
 
-  let scatterData = [];
-  let lineData = [];
-
+  // ===== 构建点和线 =====
   uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
@@ -218,41 +220,29 @@ function initMap(data) {
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
-    const extend = 20;
+    const extend = 25;
 
     const outside = [
       lon + dx * extend,
       lat + dy * extend
     ];
 
-    const color = colors[i % colors.length];
-
-    // 点（带标签）
-    scatterData.push({
+    points.push({
       name: c.title,
       value: coord,
-      label: {
-        show: true,
-        position: "outside",
-        formatter: function (params) {
-          return `${geoCoordToName(params.data.value)}\n${c.title}\n${c.start_date}`;
-        },
-        fontSize: 14,
-        fontWeight: "bold",
-        color: "#111",
-        backgroundColor: "rgba(255,255,255,0.85)",
-        padding: [6, 8],
-        borderRadius: 4,
-        distance: 10
-      },
-      itemStyle: {
-        color: color
-      }
+      location: c.location,
+      time: `${c.start_date} — ${c.end_date}`,
+      labelPos: outside
     });
 
-    // 线
-    lineData.push({
-      coords: [coord, outside],
+    const color = colors[i % colors.length];
+
+    lineSeries.push({
+      type: "lines",
+      coordinateSystem: "geo",
+      data: [{
+        coords: [coord, outside]
+      }],
       lineStyle: {
         width: 2,
         color: color
@@ -263,11 +253,7 @@ function initMap(data) {
   chart.setOption({
     geo: {
       map: "china",
-      roam: true, // ✅ 允许缩放 + 拖动
-      scaleLimit: {
-        min: 0.8,
-        max: 5
-      },
+      roam: false, // ❗ 禁止缩放拖动
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -275,34 +261,87 @@ function initMap(data) {
     },
 
     series: [
-      {
-        type: "lines",
-        coordinateSystem: "geo",
-        polyline: false,
-        data: lineData,
-        lineStyle: {
-          width: 2
-        },
-        effect: {
-          show: false
-        }
-      },
+      ...lineSeries,
+
       {
         type: "scatter",
         coordinateSystem: "geo",
-        data: scatterData,
-        symbolSize: 10,
-        encode: {
-          value: 2
-        },
-        emphasis: {
-          label: {
-            show: true
+        symbolSize: 8,
+        data: points,
+        itemStyle: {
+          color: function (params) {
+            return colors[params.dataIndex % colors.length];
           }
         }
       }
     ]
   });
+
+  // ===== 标签系统 =====
+  const zr = chart.getZr();
+
+  function clearLabels() {
+    zr.storage._displayList = [];
+  }
+
+  // 获取地点名称
+  function geoCoordToName(coord) {
+    for (let key in geoCoordMap) {
+      const val = geoCoordMap[key];
+      if (val[0] === coord[0] && val[1] === coord[1]) {
+        return key;
+      }
+    }
+    return "";
+  }
+
+  function renderLabels() {
+    clearLabels();
+
+    let used = [];
+
+    points.forEach(p => {
+      const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
+
+      let x = pos[0];
+      let y = pos[1];
+
+      // ===== 避让 =====
+      for (let u of used) {
+        const dx = u.x - x;
+        const dy = u.y - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 80) y += 20;
+      }
+
+      used.push({ x, y });
+
+      const color = colors[points.indexOf(p) % colors.length];
+
+      const group = new echarts.graphic.Group();
+
+      // ===== 三行文本 =====
+      const text = new echarts.graphic.Text({
+        style: {
+          x: x,
+          y: y,
+          text: `${geoCoordToName(p.value)}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+          font: "bold 15px Microsoft YaHei",
+          fill: "#111",
+          lineHeight: 20,
+          textAlign: "center",
+          textVerticalAlign: "middle",
+          textShadowBlur: 3,
+          textShadowColor: "#fff"
+        }
+      });
+
+      group.add(text);
+      zr.add(group);
+    });
+  }
+
+  setTimeout(renderLabels, 200);
 }
   
 fetch("conferences.json")
