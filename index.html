@@ -191,7 +191,19 @@ function getLatest(data, n = 10) {
 
 function initMap(data) {
   const chart = echarts.init(document.getElementById("map"));
-  const latest = getLatest(data, 10);
+
+  const now = new Date();
+
+  // ===== 1. 过滤：只保留“即将开始 + 进行中” =====
+  let filtered = data.filter(c => {
+    const s = new Date(c.start_date);
+    const e = new Date(c.end_date);
+    return now <= e; // 即将开始 + 进行中
+  });
+
+  // ===== 2. 取前5个（按开始时间排序）=====
+  filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+  const latest = filtered.slice(0, 5);
 
   let points = [];
   let lineSeries = [];
@@ -201,17 +213,11 @@ function initMap(data) {
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
-  const uniqueMap = {};
-  latest.forEach(c => {
-    if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
-  });
-
-  const uniqueData = Object.values(uniqueMap);
-
-  // ===== 先计算每个点的角度（基于地理位置）=====
+  // ===== 3. 中心点（用于极角分布）=====
   const center = [104.0, 35.0];
 
-  uniqueData.forEach(c => {
+  // ===== 4. 计算角度（用于均匀分布）=====
+  latest.forEach(c => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
@@ -221,21 +227,18 @@ function initMap(data) {
     );
   });
 
-  // ===== 按角度排序（关键）=====
-  uniqueData.sort((a, b) => a._angle - b._angle);
+  latest.sort((a, b) => a._angle - b._angle);
 
-  // ===== 再均匀分布角度 =====
-  const N = uniqueData.length;
+  const N = latest.length;
 
-  uniqueData.forEach((c, i) => {
+  latest.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
     const [lon, lat] = coord;
 
-    // 用排序后的 index 来均匀分布
+    // ===== 关键：均匀角度分布 =====
     const angle = (i / N) * 2 * Math.PI;
-
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
@@ -246,7 +249,7 @@ function initMap(data) {
       lat + dy * extend
     ];
 
-   points.push({
+    points.push({
       name: c.title,
       value: coord,
       location: c.location,
@@ -297,7 +300,7 @@ function initMap(data) {
 
     let used = [];
 
-    points.forEach((p, idx) => {
+    points.forEach((p) => {
       const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
       let x = pos[0];
@@ -308,6 +311,7 @@ function initMap(data) {
 
       let offsetY = 0;
 
+      // ===== 防重叠（核心逻辑保留）=====
       for (let u of used) {
         const overlapX = Math.abs(u.x - x) < boxWidth;
         const overlapY = Math.abs(u.y - (y + offsetY)) < boxHeight;
@@ -319,7 +323,7 @@ function initMap(data) {
 
       y += offsetY;
 
-      used.push({ x, y, w: boxWidth, h: boxHeight });
+      used.push({ x, y });
 
       const group = new echarts.graphic.Group();
 
