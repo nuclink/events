@@ -17,7 +17,6 @@
       padding: 18px 40px;
       font-size: 20px;
       font-weight: 600;
-      letter-spacing: 1px;
     }
 
     .container {
@@ -26,100 +25,36 @@
       background: white;
       padding: 30px 40px;
       border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.06);
     }
 
     h1 {
-      margin-bottom: 25px;
       font-size: 38px;
-      font-weight: 800;
       border-left: 6px solid #2c7be5;
       padding-left: 14px;
-      font-family: "Microsoft YaHei", sans-serif;
     }
 
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .submit-btn {
-      text-decoration: none;
-      background: #3498db;
-      color: white;
-      padding: 8px 18px;
-      border-radius: 5px;
-    }
-
-    table {
+    #map {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 15px;
+      height: 520px;
+      margin-top: 40px;
     }
-
-    thead {
-      background: #f0f4f8;
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-    }
-
-    td {
-      border-bottom: 1px solid #e5eaf0;
-    }
-
-    tr:hover {
-      background: #f8fbff;
-    }
-
-    .sort-btn {
-      cursor: pointer;
-      margin-left: 10px;
-      font-size: 14px;
-      color: #2c7be5;
-      font-weight: 600;
-    }
-
-    .tag {
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-    }
-
-    .upcoming { background: #fff3cd; color: #856404; }
-    .ongoing { background: #e8f5e9; color: #2e7d32; }
-    .past { background: #fbe9e7; color: #c62828; }
   </style>
 </head>
 
 <body>
 
-<div class="header">
-  Nuclear Physics Conferences & Workshops Index
-</div>
+<div class="header">Nuclear Physics Conferences & Workshops Index</div>
 
 <div class="container">
   <h1>核物理会议列表</h1>
 
-  <div class="top-bar">
-    <div></div>
-    <a href="submit.html" class="submit-btn">+ 提交会议</a>
-  </div>
-
-  <table id="conferenceTable"></table>
-
-  <div id="map" style="width: 100%; height: 520px; margin-top: 40px;"></div>
+  <div id="map"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/echarts/map/js/china.js"></script>
 
 <script>
-let conferenceData = [];
-
 const geoCoordMap = {
   "北京": [116.4074, 39.9042],
   "上海": [121.4737, 31.2304],
@@ -130,174 +65,113 @@ const geoCoordMap = {
   "成都": [104.0665, 30.5728]
 };
 
-function getStatus(start, end) {
-  const now = new Date();
-  const s = new Date(start);
-  const e = new Date(end);
+const colors = ["#e74c3c","#3498db","#2ecc71","#f39c12","#9b59b6"];
 
-  if (now < s) return '<span class="tag upcoming">即将开始</span>';
-  if (now <= e) return '<span class="tag ongoing">进行中</span>';
-  return '<span class="tag past">已结束</span>';
-}
+const chart = echarts.init(document.getElementById("map"));
 
-function renderTable(data) {
-  const table = document.getElementById("conferenceTable");
+const data = [
+  {title:"Conf A", location:"北京", start:"2026-04-01", end:"2026-04-05"},
+  {title:"Conf B", location:"上海", start:"2026-04-10", end:"2026-04-15"},
+  {title:"Conf C", location:"广州", start:"2026-05-01", end:"2026-05-05"},
+  {title:"Conf D", location:"西安", start:"2026-06-01", end:"2026-06-05"},
+  {title:"Conf E", location:"成都", start:"2026-07-01", end:"2026-07-05"}
+];
 
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>会议名称</th>
-        <th>地点</th>
-        <th>
-          时间
-          <span class="sort-btn" onclick="sortByDate(true)">🔼</span>
-          <span class="sort-btn" onclick="sortByDate(false)">🔽</span>
-        </th>
-        <th>状态</th>
-        <th>官网</th>
-      </tr>
-    </thead>
-  `;
+let points = [];
+let lines = [];
 
-  data.forEach(c => {
-    const row = document.createElement("tr");
+data.forEach((c, i) => {
+  const coord = geoCoordMap[c.location];
+  if (!coord) return;
 
-    row.innerHTML = `
-      <td><strong>${c.title}</strong></td>
-      <td>${c.location}</td>
-      <td>${c.start_date} — ${c.end_date}</td>
-      <td>${getStatus(c.start_date, c.end_date)}</td>
-      <td><a href="${c.link}" target="_blank">Visit</a></td>
-    `;
+  const angle = (i / data.length) * 2 * Math.PI;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
 
-    table.appendChild(row);
-  });
-}
+  const extend = 12;
 
-function sortByDate(asc) {
-  conferenceData.sort((a, b) => {
-    return asc
-      ? new Date(a.start_date) - new Date(b.start_date)
-      : new Date(b.start_date) - new Date(a.start_date);
-  });
-  renderTable(conferenceData);
-}
-
-function initMap(data) {
-  const chart = echarts.init(document.getElementById("map"));
-  const now = new Date();
-
-  let filtered = data.filter(c => new Date(c.end_date) >= now);
-  filtered.sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-
-  const latest = filtered.slice(0, 5);
-
-  let points = [];
-  let lineSeries = [];
-
-  const colors = [
-    "#e74c3c", "#3498db", "#2ecc71", "#f39c12",
-    "#9b59b6"
+  const outside = [
+    coord[0] + dx * extend,
+    coord[1] + dy * extend
   ];
 
-  latest.forEach((c, i) => {
-    const coord = geoCoordMap[c.location];
-    if (!coord) return;
+  points.push({
+    value: coord,
+    location: c.location,
+    name: c.title,
+    time: c.start,
+    labelPos: outside
+  });
 
-    const angle = (i / latest.length) * 2 * Math.PI;
-    const dx = Math.cos(angle);
-    const dy = Math.sin(angle);
+  lines.push({
+    type: "lines",
+    coordinateSystem: "geo",
+    data: [{ coords: [coord, outside] }],
+    lineStyle: {
+      width: 2,
+      color: colors[i % colors.length]
+    }
+  });
+});
 
-    const extend = 12;
-
-    const outside = [
-      coord[0] + dx * extend,
-      coord[1] + dy * extend
-    ];
-
-    points.push({
-      name: c.title,
-      value: coord,
-      location: c.location,
-      time: `${c.start_date} — ${c.end_date}`,
-      labelPos: outside
-    });
-
-    lineSeries.push({
-      type: "lines",
+chart.setOption({
+  geo: {
+    map: "china",
+    roam: false,
+    itemStyle: {
+      areaColor: "#e6f0ff",
+      borderColor: "#999"
+    }
+  },
+  series: [
+    ...lines,
+    {
+      type: "scatter",
       coordinateSystem: "geo",
-      data: [{ coords: [coord, outside] }],
-      lineStyle: {
-        width: 2,
-        color: colors[i]
-      }
-    });
-  });
-
-  chart.setOption({
-    geo: {
-      map: "china",
-      roam: false,
+      symbolSize: 8,
+      data: points,
       itemStyle: {
-        areaColor: "#e6f0ff",
-        borderColor: "#999"
+        color: (params) => colors[params.dataIndex % colors.length]
       }
-    },
-    series: [
-      ...lineSeries,
-      {
-        type: "scatter",
-        coordinateSystem: "geo",
-        symbolSize: 8,
-        data: points,
-        itemStyle: {
-          color: (params) => colors[params.dataIndex]
-        }
+    }
+  ]
+});
+
+const zr = chart.getZr();
+
+// ⭐ 正确做法：只加，不清空
+function renderLabels() {
+  points.forEach(p => {
+    const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
+
+    const text = new echarts.graphic.Text({
+      style: {
+        x: pos[0],
+        y: pos[1],
+
+        text: `${p.location}\n${p.name}\n${p.time}`,
+
+        font: "bold 14px Microsoft YaHei",
+        fill: "#000",
+        lineHeight: 18,
+
+        textAlign: "center",
+        textVerticalAlign: "middle"
       }
-    ]
-  });
-
-  const zr = chart.getZr();
-
-  // ⭐ 关键修改：标签中心 = 线终点
-  function renderLabels() {
-    zr.clear();
-
-    points.forEach((p) => {
-      const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
-
-      const text = new echarts.graphic.Text({
-        style: {
-          x: pos[0],
-          y: pos[1],
-          text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
-          font: "bold 15px Microsoft YaHei",
-          fill: "#111",
-          lineHeight: 20,
-          textAlign: "center",
-          textVerticalAlign: "middle"
-        }
-      });
-
-      zr.add(text);
     });
-  }
 
-  setTimeout(renderLabels, 300);
-
-  window.addEventListener("resize", () => {
-    chart.resize();
-    renderLabels();
+    zr.add(text);
   });
 }
 
-fetch("conferences.json")
-  .then(res => res.json())
-  .then(data => {
-    conferenceData = data;
-    renderTable(data);
-    initMap(data);
-  });
+// 等地图完全渲染后再画标签（非常重要）
+setTimeout(renderLabels, 300);
+
+// resize 保持同步
+window.addEventListener("resize", () => {
+  chart.resize();
+  setTimeout(renderLabels, 100);
+});
 </script>
 
 </body>
