@@ -198,72 +198,45 @@ function initMap(data) {
   const latest = getLatest(data, 10);
 
   let lines = [];
-
-  // 👉 先按纬度排序（关键！）
-  latest.sort((a, b) => {
-    const latA = geoCoordMap[a.location][1];
-    const latB = geoCoordMap[b.location][1];
-    return latB - latA;
-  });
-
-  // 👉 分组（避免标签挤在一起）
-  const groups = [];
-  let currentGroup = [];
-
-  latest.forEach((c, i) => {
-    currentGroup.push(c);
-
-    if (currentGroup.length === 3 || i === latest.length - 1) {
-      groups.push(currentGroup);
-      currentGroup = [];
-    }
-  });
-
   let labels = [];
   let points = [];
 
-  groups.forEach((group, gi) => {
-    group.forEach((c, i) => {
-      const coord = geoCoordMap[c.location];
-      if (!coord) return;
+  const centerLon = 105;
+  const centerLat = 35;
 
-      const [lon, lat] = coord;
+  latest.forEach(c => {
+    const coord = geoCoordMap[c.location];
+    if (!coord) return;
 
-      const centerLon = 105;
-      const centerLat = 35;
+    const [lon, lat] = coord;
 
-      let dx = lon - centerLon;
-      let dy = lat - centerLat;
+    let dx = lon - centerLon;
+    let dy = lat - centerLat;
 
-      let len = Math.sqrt(dx * dx + dy * dy) || 1;
-      dx /= len;
-      dy /= len;
+    let len = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= len;
+    dy /= len;
 
-      const extend = 18;
+    const extend = 15;
 
-      let outside = [
-        lon + dx * extend,
-        lat + dy * extend
-      ];
+    let outside = [
+      lon + dx * extend,
+      lat + dy * extend
+    ];
 
-      // 👉 同一组内部做轻微错开（防重叠关键）
-      outside[1] += (i - 1) * 3;
-      outside[0] += (gi % 2 === 0 ? 1 : -1) * 2;
+    lines.push({
+      coords: [coord, outside]
+    });
 
-      lines.push({
-        coords: [coord, outside]
-      });
+    labels.push({
+      name: c.title,
+      value: outside,
+      time: `${c.start_date} — ${c.end_date}`
+    });
 
-      // 👉 标签数据
-      labels.push({
-        name: c.title,
-        value: outside.concat(`${c.location}\n${c.start_date} — ${c.end_date}`)
-      });
-
-      points.push({
-        name: c.title,
-        value: coord
-      });
+    points.push({
+      name: c.title,
+      value: coord
     });
   });
 
@@ -281,7 +254,6 @@ function initMap(data) {
       {
         type: "lines",
         coordinateSystem: "geo",
-        effect: null,
         lineStyle: {
           width: 1.5,
           color: "#555"
@@ -308,10 +280,8 @@ function initMap(data) {
         label: {
           show: true,
           formatter: p => {
-            const text = p.data.value[2].split("\n");
-            return `{title|${p.data.name}}\n{time|${text[1]}}`;
+            return `{title|${p.data.name}}\n{time|${p.data.time}}`;
           },
-
           rich: {
             title: {
               fontSize: 14,
@@ -323,13 +293,16 @@ function initMap(data) {
               color: "#333"
             }
           },
-
           position: "right",
-          align: "left",
-          backgroundColor: "rgba(255,255,255,0.92)",
+          backgroundColor: "rgba(255,255,255,0.95)",
           padding: [6, 10],
           borderRadius: 5,
-          distance: 8
+          distance: 10
+        },
+
+        // ✅ 关键：自动避让（核心）
+        labelLayout: {
+          hideOverlap: true
         }
       }
     ]
