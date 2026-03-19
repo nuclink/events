@@ -212,6 +212,14 @@ function initMap(data) {
     "#e74c3c", "#3498db", "#2ecc71", "#f39c12",
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
+  // ===== 每条线的固定角度（单位：弧度）=====
+  const customAngles = [
+    0,                  // 第1条（向右）
+    Math.PI / 3,        // 第2条（60°）
+    2 * Math.PI / 3,    // 第3条（120°）
+    Math.PI,            // 第4条（180°）
+    5 * Math.PI / 3     // 第5条（300°）
+  ];
 
   // ===== 3. 中心点（用于极角分布）=====
   const center = [104.0, 35.0];
@@ -238,7 +246,7 @@ function initMap(data) {
     const [lon, lat] = coord;
 
     // ===== 关键：均匀角度分布 =====
-    const angle = (i / N) * 2 * Math.PI;
+    const angle = customAngles[i] || (i / N) * 2 * Math.PI;
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
