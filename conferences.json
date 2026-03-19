@@ -43,28 +43,28 @@
   },
   {
     "title": "第六届核结构研讨会",
-    "location": "上海",
+    "location": "西安",
     "start_date": "2026-10-18",
     "end_date": "2026-10-23",
     "link": "https://example.com"
   },
   {
     "title": "第七届核结构研讨会",
-    "location": "上海",
+    "location": "武汉",
     "start_date": "2026-11-18",
     "end_date": "2026-11-23",
     "link": "https://example.com"
   },
   {
     "title": "第八届核结构研讨会",
-    "location": "上海",
+    "location": "南京",
     "start_date": "2026-12-18",
     "end_date": "2026-12-23",
     "link": "https://example.com"
   },
   {
     "title": "第九届核结构研讨会",
-    "location": "南京",
+    "location": "北京",
     "start_date": "2027-01-18",
     "end_date": "2027-01-23",
     "link": "https://example.com"
