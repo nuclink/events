@@ -208,20 +208,36 @@ function initMap(data) {
 
   const uniqueData = Object.values(uniqueMap);
 
+  // ===== 先计算每个点的角度（基于地理位置）=====
+  const center = [104.0, 35.0];
+
+  uniqueData.forEach(c => {
+    const coord = geoCoordMap[c.location];
+    if (!coord) return;
+
+    c._angle = Math.atan2(
+      coord[1] - center[1],
+      coord[0] - center[0]
+    );
+  });
+
+  // ===== 按角度排序（关键）=====
+  uniqueData.sort((a, b) => a._angle - b._angle);
+
+  // ===== 再均匀分布角度 =====
+  const N = uniqueData.length;
+
   uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
     const [lon, lat] = coord;
 
-    const center = [104.0, 35.0];
+    // 用排序后的 index 来均匀分布
+    const angle = (i / N) * 2 * Math.PI;
 
-    let dx = lon - center[0];
-    let dy = lat - center[1];
-
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    dx /= len;
-    dy /= len;
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
 
     const extend = 25;
 
@@ -230,7 +246,7 @@ function initMap(data) {
       lat + dy * extend
     ];
 
-    points.push({
+   points.push({
       name: c.title,
       value: coord,
       location: c.location,
