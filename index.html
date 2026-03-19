@@ -140,37 +140,49 @@ function getStatus(start, end) {
   return '<span class="tag past">已结束</span>';
 }
 
-function renderTable(data) {
-  const table = document.getElementById("conferenceTable");
+function renderLabels() {
+  clearLabels();
 
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>会议名称</th>
-        <th>地点</th>
-        <th>
-          时间
-          <span class="sort-btn" onclick="sortByDate(true)">🔼</span>
-          <span class="sort-btn" onclick="sortByDate(false)">🔽</span>
-        </th>
-        <th>状态</th>
-        <th>官网</th>
-      </tr>
-    </thead>
-  `;
+  let used = [];
 
-  data.forEach(c => {
-    const row = document.createElement("tr");
+  points.forEach(p => {
+    const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
-    row.innerHTML = `
-      <td><strong>${c.title}</strong></td>
-      <td>${c.location}</td>
-      <td>${c.start_date} — ${c.end_date}</td>
-      <td>${getStatus(c.start_date, c.end_date)}</td>
-      <td><a href="${c.link}" target="_blank">Visit</a></td>
-    `;
+    let x = pos[0];
+    let y = pos[1];
 
-    table.appendChild(row);
+    // ===== 避让 =====
+    for (let u of used) {
+      const dx = u.x - x;
+      const dy = u.y - y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 90) y += 20;
+    }
+
+    used.push({ x, y });
+
+    const group = new echarts.graphic.Group();
+
+    const text = new echarts.graphic.Text({
+      style: {
+        x: x,
+        y: y,
+        text: `${geoCoordToName(p.value)}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+        font: "bold 15px Microsoft YaHei",
+        fill: "#111",
+        lineHeight: 20,
+        textAlign: "center",
+        textVerticalAlign: "middle",
+        textShadowBlur: 3,
+        textShadowColor: "#fff"
+      }
+    });
+
+    group.add(text);
+    zr.add(group);
+
+    // ⭐ 记录引用
+    labelGroups.push(group);
   });
 }
 
