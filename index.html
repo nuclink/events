@@ -242,7 +242,7 @@ function initMap(data) {
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
-    const extend = 25;
+    const extend = 9;
 
     const outside = [
       lon + dx * extend,
@@ -296,56 +296,60 @@ function initMap(data) {
   const zr = chart.getZr();
 
   function renderLabels() {
-    zr.storage._displayList = [];
+  zr.storage._displayList = [];
 
-    let used = [];
+  let used = [];
 
-    points.forEach((p) => {
-      const pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
+  points.forEach((p) => {
+    let pos = chart.convertToPixel({ geoIndex: 0 }, p.labelPos);
 
-      let x = pos[0];
-      let y = pos[1];
+    let x = pos[0];
+    let y = pos[1];
 
-      const boxWidth = 180;
-      const boxHeight = 60;
+    const boxW = 200;
+    const boxH = 60;
 
-      let offsetY = 0;
+    let offsetY = 0;
 
-      // ===== 防重叠（核心逻辑保留）=====
+    // 🔥 更强的避让机制（不改结构，只增强）
+    for (let k = 0; k < 10; k++) {
+      let conflict = false;
+
       for (let u of used) {
-        const overlapX = Math.abs(u.x - x) < boxWidth;
-        const overlapY = Math.abs(u.y - (y + offsetY)) < boxHeight;
-
-        if (overlapX && overlapY) {
-          offsetY += (used.indexOf(u) % 2 === 0 ? -1 : 1) * 40;
+        if (
+          Math.abs(u.x - x) < boxW &&
+          Math.abs(u.y - (y + offsetY)) < boxH
+        ) {
+          conflict = true;
+          break;
         }
       }
 
-      y += offsetY;
+      if (!conflict) break;
 
-      used.push({ x, y });
+      // 上下交替 + 逐步拉开
+      offsetY = (k % 2 === 0 ? 1 : -1) * (k + 1) * 35;
+    }
 
-      const group = new echarts.graphic.Group();
+    y += offsetY;
 
-      const text = new echarts.graphic.Text({
-        style: {
-          x,
-          y,
-          text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
-          font: "bold 15px Microsoft YaHei",
-          fill: "#111",
-          lineHeight: 20,
-          textAlign: "center",
-          textVerticalAlign: "middle",
-          textShadowBlur: 3,
-          textShadowColor: "#fff"
-        }
-      });
+    used.push({ x, y });
 
-      group.add(text);
-      zr.add(group);
+    const text = new echarts.graphic.Text({
+      style: {
+        x,
+        y,
+        text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+        font: "bold 15px Microsoft YaHei",
+        fill: "#111",
+        lineHeight: 20,
+        textAlign: "center"
+      }
     });
-  }
+
+    zr.add(text);
+  });
+}
 
   setTimeout(renderLabels, 200);
 }
