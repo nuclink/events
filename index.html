@@ -209,6 +209,7 @@ function initMap(data) {
 
   const uniqueData = Object.values(uniqueMap);
 
+  // ===== 构建点和线 =====
   uniqueData.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
@@ -226,15 +227,14 @@ function initMap(data) {
       lat + dy * extend
     ];
 
-    // 点
     points.push({
       name: c.title,
       value: coord,
+      location: c.location,
       time: `${c.start_date} — ${c.end_date}`,
       labelPos: outside
     });
 
-    // 线（颜色与点统一）
     const color = colors[i % colors.length];
 
     lineSeries.push({
@@ -253,7 +253,7 @@ function initMap(data) {
   chart.setOption({
     geo: {
       map: "china",
-      roam: false,  // ❗ 禁止缩放拖动
+      roam: false, // ❗ 禁止缩放拖动
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -277,11 +277,22 @@ function initMap(data) {
     ]
   });
 
-  // ===== 标签绘制 =====
+  // ===== 标签系统 =====
   const zr = chart.getZr();
 
   function clearLabels() {
     zr.storage._displayList = [];
+  }
+
+  // 获取地点名称
+  function geoCoordToName(coord) {
+    for (let key in geoCoordMap) {
+      const val = geoCoordMap[key];
+      if (val[0] === coord[0] && val[1] === coord[1]) {
+        return key;
+      }
+    }
+    return "";
   }
 
   function renderLabels() {
@@ -295,12 +306,11 @@ function initMap(data) {
       let x = pos[0];
       let y = pos[1];
 
-      // 避让
+      // ===== 避让 =====
       for (let u of used) {
         const dx = u.x - x;
         const dy = u.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-
         if (dist < 80) y += 20;
       }
 
@@ -310,30 +320,22 @@ function initMap(data) {
 
       const group = new echarts.graphic.Group();
 
-      // ❗ 无边框（透明）
-      const rect = new echarts.graphic.Rect({
-        shape: { x, y, width: 220, height: 50 },
-        style: {
-          fill: "transparent",
-          stroke: "transparent"
-        }
-      });
-
-      // ❗ 更清晰的文字
+      // ===== 三行文本 =====
       const text = new echarts.graphic.Text({
         style: {
-          x: x + 8,
-          y: y + 5,
-          text: `${p.name}\n${p.time}`,
-          font: "bold 16px Microsoft YaHei",
+          x: x,
+          y: y,
+          text: `${geoCoordToName(p.value)}\n${p.name}\n${p.time.split("—")[0].trim()}`,
+          font: "bold 15px Microsoft YaHei",
           fill: "#111",
           lineHeight: 20,
+          textAlign: "center",
+          textVerticalAlign: "middle",
           textShadowBlur: 3,
           textShadowColor: "#fff"
         }
       });
 
-      group.add(rect);
       group.add(text);
       zr.add(group);
     });
