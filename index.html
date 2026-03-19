@@ -205,25 +205,26 @@ function initMap(data) {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
-    // 左右分布（关键优化）
-    const isRight = i % 2 === 0;
+    // 更自然的左右分布（避免上海跑到左边）
+    const isRight = coord[0] < 110; // 根据经度判断
 
+    // 标签位置（尽量贴边）
     const outside = isRight
-      ? [130, 60 - i * 3]
-      : [75, 60 - i * 3];
+      ? [135, coord[1]]   // 右侧
+      : [65, coord[1]];   // 左侧
 
-    // 连线
+    // 直线（无弯曲）
     lines.push({
       coords: [coord, outside]
     });
 
-    // 点
+    // 地图点
     points.push({
       name: c.title,
       value: coord
     });
 
-    // 标签
+    // 标签数据
     labels.push({
       name: c.title,
       value: outside.concat(`${c.location}\n${c.start_date} — ${c.end_date}`)
@@ -241,29 +242,32 @@ function initMap(data) {
     },
 
     series: [
+      // 点
       {
         type: "scatter",
         coordinateSystem: "geo",
         data: points,
-        symbolSize: 8
+        symbolSize: 6,
+        itemStyle: {
+          color: "#2c7be5"
+        }
       },
 
+      // 直线（无动画）
       {
         type: "lines",
         coordinateSystem: "geo",
-        effect: {
-          show: true,
-          symbol: "arrow",
-          symbolSize: 5
-        },
+        zlevel: 2,
         lineStyle: {
           width: 1.5,
-          curveness: 0.25,
-          color: "#666"
+          color: "#555",
+          opacity: 0.8
         },
+        effect: null,   // ❗彻底去掉动画
         data: lines
       },
 
+      // 标签（会议名称 + 时间）
       {
         type: "scatter",
         coordinateSystem: "geo",
@@ -271,13 +275,18 @@ function initMap(data) {
         symbol: "none",
         label: {
           show: true,
-          formatter: p => p.data.name + "\n" + p.data.value[2],
+          formatter: p => {
+            const [name, time] = p.data.value[2].split("\n");
+            return `${name}\n${time}`;
+          },
           position: "right",
+          align: "left",
           color: "#222",
           fontSize: 12,
-          backgroundColor: "rgba(255,255,255,0.85)",
+          backgroundColor: "rgba(255,255,255,0.9)",
           padding: [6, 8],
-          borderRadius: 5
+          borderRadius: 5,
+          distance: 8
         }
       }
     ]
