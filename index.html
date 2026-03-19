@@ -250,7 +250,7 @@ function initMap(data) {
     const dx = Math.cos(angle);
     const dy = Math.sin(angle);
 
-    const extend = 12;
+    const extend = 15;
 
     const outside = [
       lon + dx * extend,
@@ -320,7 +320,7 @@ function renderLabels() {
 
         // 👉 关键：让“文字中心”对齐线的终点
         textAlign: "middle",
-        textVerticalAlign: "top"
+        textVerticalAlign: "middle"
       }
     });
 
