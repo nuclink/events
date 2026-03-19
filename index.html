@@ -198,8 +198,8 @@ function initMap(data) {
   const latest = getLatest(data, 10);
 
   let lines = [];
-  let labels = [];
   let points = [];
+  let labels = [];
 
   const centerLon = 105;
   const centerLat = 35;
@@ -217,33 +217,29 @@ function initMap(data) {
     dx /= len;
     dy /= len;
 
-    const extend = 18;
+    // ✅ 更大外扩（确保在地图外）
+    const extend = 25;
 
-    // ✅ 真实点（蓝点）
+    let outside = [
+      lon + dx * extend,
+      lat + dy * extend
+    ];
+
+    // 👉 线（从点到外部）
+    lines.push({
+      coords: [coord, outside]
+    });
+
+    // 👉 蓝色点（真实位置）
     points.push({
       name: c.title,
       value: coord
     });
 
-    // ✅ 标签方向（四个方向轮换，防重叠）
-    let angle = (i % 4) * (Math.PI / 2);
-    let ox = Math.cos(angle) * extend;
-    let oy = Math.sin(angle) * extend;
-
-    let labelPos = [
-      lon + ox,
-      lat + oy
-    ];
-
-    // 线
-    lines.push({
-      coords: [coord, labelPos]
-    });
-
-    // 标签
+    // 👉 标签点（外部位置）
     labels.push({
       name: c.title,
-      value: labelPos,
+      value: outside,
       time: `${c.start_date} — ${c.end_date}`
     });
   });
@@ -259,33 +255,40 @@ function initMap(data) {
     },
 
     series: [
-      // 连接线
+      // ✅ 线
       {
         type: "lines",
         coordinateSystem: "geo",
         lineStyle: {
-          width: 1.2,
-          color: "#666"
+          width: 1.5,
+          color: "#555"
         },
         data: lines
       },
 
-      // 蓝点（真实位置）
+      // ✅ 蓝色点（真实位置）
       {
         type: "scatter",
         coordinateSystem: "geo",
-        symbolSize: 6,
+        symbolSize: 8,
         itemStyle: {
           color: "#2c7be5"
         },
         data: points
       },
 
-      // 标签（外扩位置）
+      // ❗标签层（关键修复）
       {
         type: "scatter",
         coordinateSystem: "geo",
-        symbol: "none",
+
+        // ✅ 必须要有 symbol（否则 label 可能不显示）
+        symbol: "circle",
+        symbolSize: 1,
+        itemStyle: {
+          opacity: 0 // 让点“不可见”
+        },
+
         data: labels,
 
         label: {
@@ -293,6 +296,7 @@ function initMap(data) {
           formatter: p => {
             return `{title|${p.data.name}}\n{time|${p.data.time}}`;
           },
+
           rich: {
             title: {
               fontSize: 14,
@@ -301,16 +305,18 @@ function initMap(data) {
             },
             time: {
               fontSize: 12,
-              color: "#444"
+              color: "#333"
             }
           },
+
           position: "right",
           backgroundColor: "rgba(255,255,255,0.95)",
           padding: [6, 10],
-          borderRadius: 5
+          borderRadius: 5,
+          distance: 8
         },
 
-        // ❗关键：强制自动避让（但不是完全保证）
+        // ✅ 自动避让（防重叠）
         labelLayout: {
           hideOverlap: false,
           moveOverlap: "shiftY"
