@@ -191,27 +191,26 @@ function getLatest(data, n = 10) {
 
 function initMap(data) {
   const chart = echarts.init(document.getElementById("map"));
-  const latest = getLatest(data, 10);
 
-  let points = [];
-  let lineSeries = [];
+  // 取最近10个（保留）
+  const latest = getLatest(data, 10);
 
   const colors = [
     "#e74c3c", "#3498db", "#2ecc71", "#f39c12",
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
-  const uniqueMap = {};
-  latest.forEach(c => {
-    if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
-  });
+  let points = [];
+  let lineSeries = [];
 
-  const uniqueData = Object.values(uniqueMap);
+  // ===== 按城市计数（用于空间分散）=====
+  let cityCount = {};
 
-  // ===== 先计算每个点的角度（基于地理位置）=====
+  // ===== 中心点（用于方向分布）=====
   const center = [104.0, 35.0];
 
-  uniqueData.forEach(c => {
+  // ===== 先按“角度”排序（整体美观）=====
+  latest.forEach(c => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
@@ -221,32 +220,30 @@ function initMap(data) {
     );
   });
 
-  // ===== 按角度排序（关键）=====
-  uniqueData.sort((a, b) => a._angle - b._angle);
+  latest.sort((a, b) => a._angle - b._angle);
 
-  // ===== 再均匀分布角度 =====
-  const N = uniqueData.length;
-
-  uniqueData.forEach((c, i) => {
+  // ===== 逐个绘制 =====
+  latest.forEach((c, i) => {
     const coord = geoCoordMap[c.location];
     if (!coord) return;
 
-    const [lon, lat] = coord;
+    // ===== 同一城市进行分散 =====
+    if (!cityCount[c.location]) cityCount[c.location] = 0;
 
-    // 用排序后的 index 来均匀分布
-    const angle = (i / N) * 2 * Math.PI;
+    const idx = cityCount[c.location]++;
+    const angleOffset = idx * 0.6;   // 每个会议略微旋转
+    const radius = 20 + idx * 8;     // 每个会议逐渐外扩
 
-    const dx = Math.cos(angle);
-    const dy = Math.sin(angle);
-
-    const extend = 25;
+    const dx = Math.cos(angleOffset);
+    const dy = Math.sin(angleOffset);
 
     const outside = [
-      lon + dx * extend,
-      lat + dy * extend
+      coord[0] + dx * radius,
+      coord[1] + dy * radius
     ];
 
-   points.push({
+    // ===== 点 =====
+    points.push({
       name: c.title,
       value: coord,
       location: c.location,
@@ -254,6 +251,7 @@ function initMap(data) {
       labelPos: outside
     });
 
+    // ===== 线 =====
     const color = colors[i % colors.length];
 
     lineSeries.push({
@@ -262,15 +260,17 @@ function initMap(data) {
       data: [{ coords: [coord, outside] }],
       lineStyle: {
         width: 2,
-        color: color
+        color: color,
+        curveness: 0.2   // ⭐让线稍微弯曲，更好看
       }
     });
   });
 
+  // ===== 地图配置 =====
   chart.setOption({
     geo: {
       map: "china",
-      roam: false,
+      roam: true,
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -284,12 +284,14 @@ function initMap(data) {
         symbolSize: 8,
         data: points,
         itemStyle: {
-          color: (params) => colors[params.dataIndex % colors.length]
+          color: (params) =>
+            colors[params.dataIndex % colors.length]
         }
       }
     ]
   });
 
+  // ===== 标签绘制 =====
   const zr = chart.getZr();
 
   function renderLabels() {
@@ -303,23 +305,24 @@ function initMap(data) {
       let x = pos[0];
       let y = pos[1];
 
-      const boxWidth = 180;
-      const boxHeight = 60;
+      const boxWidth = 200;
+      const boxHeight = 70;
 
       let offsetY = 0;
 
+      // ===== 防止标签重叠 =====
       for (let u of used) {
         const overlapX = Math.abs(u.x - x) < boxWidth;
         const overlapY = Math.abs(u.y - (y + offsetY)) < boxHeight;
 
         if (overlapX && overlapY) {
-          offsetY += (used.indexOf(u) % 2 === 0 ? -1 : 1) * 40;
+          offsetY += (idx % 2 === 0 ? -1 : 1) * 45;
         }
       }
 
       y += offsetY;
 
-      used.push({ x, y, w: boxWidth, h: boxHeight });
+      used.push({ x, y });
 
       const group = new echarts.graphic.Group();
 
@@ -327,10 +330,10 @@ function initMap(data) {
         style: {
           x,
           y,
-          text: `${p.location}\n${p.name}\n${p.time.split("—")[0].trim()}`,
-          font: "bold 15px Microsoft YaHei",
+          text: `${p.location}\n${p.name}\n${p.time}`,
+          font: "bold 16px Microsoft YaHei",
           fill: "#111",
-          lineHeight: 20,
+          lineHeight: 22,
           textAlign: "center",
           textVerticalAlign: "middle",
           textShadowBlur: 3,
