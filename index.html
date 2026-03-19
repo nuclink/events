@@ -201,6 +201,7 @@ function initMap(data) {
     "#9b59b6", "#1abc9c", "#e67e22", "#2c3e50"
   ];
 
+  // 去重
   const uniqueMap = {};
   latest.forEach(c => {
     if (!uniqueMap[c.title]) uniqueMap[c.title] = c;
@@ -225,12 +226,16 @@ function initMap(data) {
       lat + dy * extend
     ];
 
+    // 点
     points.push({
       name: c.title,
       value: coord,
       time: `${c.start_date} — ${c.end_date}`,
       labelPos: outside
     });
+
+    // 线（颜色与点统一）
+    const color = colors[i % colors.length];
 
     lineSeries.push({
       type: "lines",
@@ -240,7 +245,7 @@ function initMap(data) {
       }],
       lineStyle: {
         width: 2,
-        color: colors[i % colors.length]
+        color: color
       }
     });
   });
@@ -248,7 +253,7 @@ function initMap(data) {
   chart.setOption({
     geo: {
       map: "china",
-      roam: false,   // ✅ 禁止缩放拖动
+      roam: false,  // ❗ 禁止缩放拖动
       itemStyle: {
         areaColor: "#e6f0ff",
         borderColor: "#999"
@@ -262,15 +267,17 @@ function initMap(data) {
         type: "scatter",
         coordinateSystem: "geo",
         symbolSize: 8,
+        data: points,
         itemStyle: {
-          color: "#2c7be5"
-        },
-        data: points
+          color: function (params) {
+            return colors[params.dataIndex % colors.length];
+          }
+        }
       }
     ]
   });
 
-  // ===== 标签（避免重叠）=====
+  // ===== 标签绘制 =====
   const zr = chart.getZr();
 
   function clearLabels() {
@@ -288,6 +295,7 @@ function initMap(data) {
       let x = pos[0];
       let y = pos[1];
 
+      // 避让
       for (let u of used) {
         const dx = u.x - x;
         const dy = u.y - y;
@@ -298,31 +306,35 @@ function initMap(data) {
 
       used.push({ x, y });
 
+      const color = colors[points.indexOf(p) % colors.length];
+
       const group = new echarts.graphic.Group();
 
+      // ❗ 无边框（透明）
       const rect = new echarts.graphic.Rect({
         shape: { x, y, width: 220, height: 50 },
         style: {
-          fill: "rgba(255,255,255,0.95)",
-          stroke: "#ccc",
-          lineWidth: 1
+          fill: "transparent",
+          stroke: "transparent"
         }
       });
 
+      // ❗ 更清晰的文字
       const text = new echarts.graphic.Text({
         style: {
           x: x + 8,
           y: y + 5,
           text: `${p.name}\n${p.time}`,
-          font: "bold 14px Microsoft YaHei",
-          fill: "#333",
-          lineHeight: 18
+          font: "bold 16px Microsoft YaHei",
+          fill: "#111",
+          lineHeight: 20,
+          textShadowBlur: 3,
+          textShadowColor: "#fff"
         }
       });
 
       group.add(rect);
       group.add(text);
-
       zr.add(group);
     });
   }
