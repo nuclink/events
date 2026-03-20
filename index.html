@@ -92,6 +92,51 @@
     .upcoming { background: #fff3cd; color: #856404; }
     .ongoing { background: #e8f5e9; color: #2e7d32; }
     .past { background: #fbe9e7; color: #c62828; }
+    .calendar {
+  margin-top: 10px;
+}
+
+.calendar-header {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-day {
+  background: #f8fbff;
+  min-height: 90px;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.calendar-day.other-month {
+  background: #f0f2f5;
+  color: #aaa;
+}
+
+.calendar-date {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.event {
+  background: #2c7be5;
+  color: white;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-top: 2px;
+  font-size: 11px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
   </style>
 </head>
 
@@ -110,6 +155,7 @@
   </div>
 
   <table id="conferenceTable"></table>
+  <div id="calendar" style="margin-top:40px;"></div>
 </div>
 
 <script>
@@ -178,6 +224,77 @@ function sortByDate(asc) {
   });
   renderTable(conferenceData);
 }
+function renderCalendar(data) {
+  const container = document.getElementById("calendar");
+  container.innerHTML = "";
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  // 标题
+  const header = document.createElement("div");
+  header.className = "calendar-header";
+  header.innerText = `${year} 年 ${month + 1} 月`;
+  container.appendChild(header);
+
+  const grid = document.createElement("div");
+  grid.className = "calendar-grid";
+
+  const firstDay = new Date(year, month, 1);
+  const startDay = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // 👉 过滤会议（未开始 + 进行中）
+  const validEvents = data.filter(c => {
+    const end = new Date(c.end_date);
+    return now <= end;
+  });
+
+  // 👉 日期映射
+  const eventMap = {};
+
+  validEvents.forEach(c => {
+    let start = new Date(c.start_date);
+    let end = new Date(c.end_date);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().split("T")[0];
+      if (!eventMap[key]) eventMap[key] = [];
+      eventMap[key].push(c.title);
+    }
+  });
+
+  // 空白占位
+  for (let i = 0; i < startDay; i++) {
+    const cell = document.createElement("div");
+    cell.className = "calendar-day other-month";
+    grid.appendChild(cell);
+  }
+
+  // 本月
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+    cell.innerHTML = `<div class="calendar-date">${d}</div>`;
+
+    if (eventMap[dateStr]) {
+      eventMap[dateStr].forEach(title => {
+        const e = document.createElement("div");
+        e.className = "event";
+        e.innerText = title;
+        cell.appendChild(e);
+      });
+    }
+
+    grid.appendChild(cell);
+  }
+
+  container.appendChild(grid);
+}
 
 fetch("conferences.json")
   .then(res => res.json())
@@ -186,6 +303,8 @@ fetch("conferences.json")
 
     // 👇 默认按时间倒序（最新在前）
     sortByDate(false);
+    // 👇 新增
+    renderCalendar(data);
   });
 </script>
 
