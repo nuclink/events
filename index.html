@@ -218,11 +218,11 @@ let currentMonthOffset = 0;
 
 function getStatus(start, end) {
   const now = new Date();
+  const s = new Date(start);
   const e = new Date(end);
 
-  if (now <= e) {
-    return '<span class="tag ongoing">未结束</span>';
-  }
+  if (now < s) return '<span class="tag upcoming">即将开始</span>';
+  if (now <= e) return '<span class="tag ongoing">进行中</span>';
   return '<span class="tag past">已结束</span>';
 }
 
@@ -320,8 +320,9 @@ function renderCalendar(data) {
       const e = new Date(c.end_date);
 
       let status = "";
-      if (now <= e) status = "ongoing"; // 未结束
-      else status = "past"; // 已结束
+      if (now < s) status = "upcoming";
+      else if (now <= e) status = "ongoing";
+      else status = "past";
       eventMap[key].push({
         title: c.title,
         location: c.location,
