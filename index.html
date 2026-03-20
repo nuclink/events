@@ -229,32 +229,11 @@ function renderCalendar(data) {
   container.innerHTML = "";
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
 
-  // 标题
-  const header = document.createElement("div");
-  header.className = "calendar-header";
-  header.innerText = `${year} 年 ${month + 1} 月`;
-  container.appendChild(header);
-
-  const grid = document.createElement("div");
-  grid.className = "calendar-grid";
-
-  const firstDay = new Date(year, month, 1);
-  const startDay = firstDay.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  // 👉 过滤会议（未开始 + 进行中）
-  const validEvents = data.filter(c => {
-    const end = new Date(c.end_date);
-    return now <= end;
-  });
-
-  // 👉 日期映射
+  // ===== 建立日期 → 会议映射（所有会议）=====
   const eventMap = {};
 
-  validEvents.forEach(c => {
+  data.forEach(c => {
     let start = new Date(c.start_date);
     let end = new Date(c.end_date);
 
@@ -265,35 +244,57 @@ function renderCalendar(data) {
     }
   });
 
-  // 空白占位
-  for (let i = 0; i < startDay; i++) {
-    const cell = document.createElement("div");
-    cell.className = "calendar-day other-month";
-    grid.appendChild(cell);
-  }
+  // ===== 连续12个月 =====
+  for (let m = 0; m < 12; m++) {
 
-  // 本月
-  for (let d = 1; d <= daysInMonth; d++) {
-    const cell = document.createElement("div");
-    cell.className = "calendar-day";
+    const date = new Date(now.getFullYear(), now.getMonth() + m, 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
 
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    // ===== 月标题 =====
+    const header = document.createElement("div");
+    header.className = "calendar-header";
+    header.innerText = `${year} 年 ${month + 1} 月`;
+    container.appendChild(header);
 
-    cell.innerHTML = `<div class="calendar-date">${d}</div>`;
+    const grid = document.createElement("div");
+    grid.className = "calendar-grid";
 
-    if (eventMap[dateStr]) {
-      eventMap[dateStr].forEach(title => {
-        const e = document.createElement("div");
-        e.className = "event";
-        e.innerText = title;
-        cell.appendChild(e);
-      });
+    const firstDay = new Date(year, month, 1);
+    const startDay = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // 空白占位
+    for (let i = 0; i < startDay; i++) {
+      const cell = document.createElement("div");
+      cell.className = "calendar-day other-month";
+      grid.appendChild(cell);
     }
 
-    grid.appendChild(cell);
-  }
+    // 本月
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement("div");
+      cell.className = "calendar-day";
 
-  container.appendChild(grid);
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+      cell.innerHTML = `<div class="calendar-date">${d}</div>`;
+
+      // 👉 显示所有会议（不再过滤）
+      if (eventMap[dateStr]) {
+        eventMap[dateStr].forEach(title => {
+          const e = document.createElement("div");
+          e.className = "event";
+          e.innerText = title;
+          cell.appendChild(e);
+        });
+      }
+
+      grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+  }
 }
 
 fetch("conferences.json")
