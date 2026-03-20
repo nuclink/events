@@ -221,7 +221,7 @@ function getStatus(start, end) {
   const s = new Date(start);
   const e = new Date(end);
 
-  if (now < s) return '<span class="tag upcoming">即将开始</span>';
+  if (now < s) return '<span class="tag upcoming">未开始</span>';
   if (now <= e) return '<span class="tag ongoing">进行中</span>';
   return '<span class="tag past">已结束</span>';
 }
