@@ -144,19 +144,30 @@ function renderTable(data) {
     </thead>
   `;
 
-  data.forEach(c => {
-    const row = document.createElement("tr");
+let prevYear = null;
 
-    row.innerHTML = `
-      <td><strong>${c.title}</strong></td>
-      <td>${c.location}</td>
-      <td>${c.start_date} — ${c.end_date}</td>
-      <td>${getStatus(c.start_date, c.end_date)}</td>
-      <td><a href="${c.link}" target="_blank">Visit</a></td>
-    `;
+data.forEach((c, index) => {
+  const row = document.createElement("tr");
 
-    table.appendChild(row);
-  });
+  const currentYear = new Date(c.start_date).getFullYear();
+
+  // 👉 如果年份变化，加粗分割线
+  if (prevYear !== null && currentYear !== prevYear) {
+    row.style.borderTop = "3px solid #2c3e50";
+  }
+
+  row.innerHTML = `
+    <td><strong>${c.title}</strong></td>
+    <td>${c.location}</td>
+    <td>${c.start_date} — ${c.end_date}</td>
+    <td>${getStatus(c.start_date, c.end_date)}</td>
+    <td><a href="${c.link}" target="_blank">Visit</a></td>
+  `;
+
+  table.appendChild(row);
+
+  prevYear = currentYear;
+});
 }
 
 function sortByDate(asc) {
