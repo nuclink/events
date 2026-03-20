@@ -268,7 +268,10 @@ function renderCalendar(data) {
     let end = new Date(c.end_date);
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().split("T")[0];
+      const key =
+        d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0");
       if (!eventMap[key]) eventMap[key] = [];
       const now = new Date();
       const s = new Date(c.start_date);
@@ -280,7 +283,7 @@ function renderCalendar(data) {
       else status = "past";
       eventMap[key].push({
         title: c.title,
-        location: c.location
+        location: c.location,
         status: status
       });
     }
