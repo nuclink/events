@@ -1,5 +1,19 @@
 [
   {
+    "title": "International Symposium Commemorating the 40th Anniversary of the Halo Nuclei (HALO-40)",
+    "location": "北京",
+    "start_date": "2025-10-12",
+    "end_date": "2025-10-18",
+    "link": "https://indico.pku.edu.cn/event/42/"
+  },
+  {
+    "title": "第十五届“相对论密度泛函前沿论坛”",
+    "location": "河南洛阳",
+    "start_date": "2025-10-25",
+    "end_date": "2025-10-31",
+    "link": "https://indico.pku.edu.cn/event/49/"
+  },
+  {
     "title": "第四届全国核物理及核数据中的机器学习应用研讨会",
     "location": "湖南衡阳",
     "start_date": "2025-10-31",
@@ -28,10 +42,17 @@
     "link": "https://napp.fudan.edu.cn/event/447/"
   },
   {
-    "title": "18th International Symposium on Origin of Matter and Evolution of Galaxies",
+    "title": "18th International Symposium on Origin of Matter and Evolution of Galaxies (OMEG18)",
     "location": "日本",
     "start_date": "2026-10-19",
     "end_date": "2026-10-23",
     "link": "https://indico2.riken.jp/event/5341/"
+  },
+  {
+    "title": "The 13th International Conference on Direct Reactions with Exotic Beams (DREB2026)",
+    "location": "广东深圳",
+    "start_date": "2026-11-01",
+    "end_date": "2026-11-06",
+    "link": "https://indico.impcas.ac.cn/event/178/"
   }
 ]
