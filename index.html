@@ -135,6 +135,9 @@
       white-space: normal;
       word-break: break-word;
     }
+    .event.upcoming { background: #fff3cd; color: #856404; }
+    .event.ongoing  { background: #e8f5e9; color: #2e7d32; }
+    .event.past     { background: #fbe9e7; color: #c62828; }
 
   </style>
 </head>
@@ -146,7 +149,7 @@
 </div>
 
 <div class="container">
-  <h1>核物理会议列表</h1>
+  <h1 style="margin-top:40px;">核物理会议日程表</h1>
 
   <div class="top-bar">
     <div></div>
@@ -154,7 +157,7 @@
   </div>
 
   <table id="conferenceTable"></table>
-
+  <h1>核物理会议日程表</h1>
   <!-- ===== 日历（修改）===== -->
   <div id="calendar" style="margin-top:40px;">
     <div id="calendar-controls">
@@ -267,6 +270,14 @@ function renderCalendar(data) {
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().split("T")[0];
       if (!eventMap[key]) eventMap[key] = [];
+      const now = new Date();
+      const s = new Date(c.start_date);
+      const e = new Date(c.end_date);
+
+      let status = "";
+      if (now < s) status = "upcoming";
+      else if (now <= e) status = "ongoing";
+      else status = "past";
       eventMap[key].push({
         title: c.title,
         location: c.location
@@ -291,7 +302,7 @@ function renderCalendar(data) {
     if (eventMap[dateStr]) {
       eventMap[dateStr].forEach(eData => {
         const e = document.createElement("div");
-        e.className = "event";
+        e.className = `event ${eData.status}`;
 
         // 👉 名称 + 地点
         e.innerText = `${eData.title} (${eData.location})`;
