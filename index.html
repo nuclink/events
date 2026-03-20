@@ -50,12 +50,30 @@
       color: white;
       padding: 8px 18px;
       border-radius: 5px;
-    }
+ }
 
+    /* 表格整体布局固定，避免被内容撑开 */
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 15px;
+      table-layout: fixed;   /* ⭐关键：固定列宽 */
+    }
+
+    /* 给第一列设置宽度 */
+    th:first-child,
+    td:first-child {
+      width: 45%;           /* 可根据需要调整，比如 30% / 40% */
+      white-space: normal;  /* 允许换行 */
+      word-break: break-word;
+    }
+
+    /* 后面四列禁止换行 */
+    th:not(:first-child),
+    td:not(:first-child) {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* 太长显示 ... */
     }
 
     thead {
