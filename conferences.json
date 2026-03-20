@@ -1,24 +1,24 @@
 [
   {
     "title": "第四届全国核物理及核数据中的机器学习应用研讨会",
-    "location": "衡阳",
+    "location": "湖南衡阳",
     "start_date": "2025-10-31",
     "end_date": "2025-11-03",
     "link": "https://indico.pku.edu.cn/event/50/"
   },
   {
     "title": "第十九届全国核物理大会",
-    "location": "瑞昌",
+    "location": "江西瑞昌",
     "start_date": "2026-03-27",
     "end_date": "2026-03-31",
     "link": "http://www.meeting-ranpa.cn"
   },
     {
-    "title": "第二十届全国核物理大会",
-    "location": "瑞昌",
-    "start_date": "2026-03-27",
-    "end_date": "2026-03-31",
-    "link": "http://www.meeting-ranpa.cn"
+    "title": "第二十届全国核结构大会",
+    "location": "河南郑州",
+    "start_date": "2026-04-16",
+    "end_date": "2026-04-20",
+    "link": "https://indico.pku.edu.cn/event/69/"
   },
   {
     "title": "高能与低能核物理交叉学术研讨会",
