@@ -1,72 +1,37 @@
 [
   {
-    "title": "全国核物理大会",
-    "location": "北京",
-    "start_date": "2026-02-12",
-    "end_date": "2026-02-16",
-    "link": "https://example.com"
+    "title": "第四届全国核物理及核数据中的机器学习应用研讨会",
+    "location": "衡阳",
+    "start_date": "2025-10-31",
+    "end_date": "2025-11-03",
+    "link": "https://indico.pku.edu.cn/event/50/"
   },
   {
-    "title": "第一届核结构研讨会",
+    "title": "第十九届全国核物理大会",
+    "location": "瑞昌",
+    "start_date": "2026-03-27",
+    "end_date": "2026-03-31",
+    "link": "http://www.meeting-ranpa.cn"
+  },
+  {
+    "title": "第二十届全国核结构大会",
+    "location": "郑州",
+    "start_date": "2026-04-16",
+    "end_date": "2026-04-20",
+    "link": "https://indico.pku.edu.cn/event/69/"
+  },
+  {
+    "title": "高能与低能核物理交叉学术研讨会",
     "location": "上海",
-    "start_date": "2026-03-18",
-    "end_date": "2026-03-23",
-    "link": "https://example.com"
+    "start_date": "2026-05-15",
+    "end_date": "2026-05-18",
+    "link": "https://napp.fudan.edu.cn/event/447/"
   },
   {
-    "title": "第二届核结构研讨会",
-    "location": "广州",
-    "start_date": "2026-06-18",
-    "end_date": "2026-06-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第三届核结构研讨会",
-    "location": "成都",
-    "start_date": "2026-07-18",
-    "end_date": "2026-07-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第四届核结构研讨会",
-    "location": "合肥",
-    "start_date": "2026-08-18",
-    "end_date": "2026-08-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第五届核结构研讨会",
-    "location": "厦门",
-    "start_date": "2026-09-18",
-    "end_date": "2026-09-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第六届核结构研讨会",
-    "location": "西安",
-    "start_date": "2026-10-18",
+    "title": "18th International Symposium on Origin of Matter and Evolution of Galaxies",
+    "location": "日本",
+    "start_date": "2026-10-19",
     "end_date": "2026-10-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第七届核结构研讨会",
-    "location": "武汉",
-    "start_date": "2026-11-18",
-    "end_date": "2026-11-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第八届核结构研讨会",
-    "location": "南京",
-    "start_date": "2026-12-18",
-    "end_date": "2026-12-23",
-    "link": "https://example.com"
-  },
-  {
-    "title": "第九届核结构研讨会",
-    "location": "北京",
-    "start_date": "2027-01-18",
-    "end_date": "2027-01-23",
     "link": "https://example.com"
   }
 ]
