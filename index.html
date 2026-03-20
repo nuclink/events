@@ -57,23 +57,47 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 15px;
-      table-layout: fixed;   /* ⭐关键：固定列宽 */
+      table-layout: fixed; /* 固定布局，必须要有 */
     }
 
-    /* 给第一列设置宽度 */
-    th:first-child,
-    td:first-child {
-      width: 45%;           /* 可根据需要调整，比如 30% / 40% */
-      white-space: normal;  /* 允许换行 */
+    /* 第一列：会议名称（稍宽） */
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 40%;
+      white-space: normal;
       word-break: break-word;
     }
 
-    /* 后面四列禁止换行 */
-    th:not(:first-child),
-    td:not(:first-child) {
+    /* 第二列：地点（缩短） */
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 14%;
+    }
+
+    /* 第三列：时间（加宽） */
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 20%;
+    }
+
+    /* 第四列：状态（缩短） */
+    th:nth-child(4),
+    td:nth-child(4) {
+      width: 8%;
+    }
+
+    /* 第五列：官网（缩短） */
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: 8%;
+    }
+
+    /* 其他列禁止换行 */
+    th:nth-child(n+2),
+    td:nth-child(n+2) {
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis; /* 太长显示 ... */
+      text-overflow: ellipsis;
     }
 
     thead {
