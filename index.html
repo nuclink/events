@@ -172,7 +172,9 @@ fetch("conferences.json")
   .then(res => res.json())
   .then(data => {
     conferenceData = data;
-    renderTable(data);
+
+    // 👇 默认按时间倒序（最新在前）
+    sortByDate(false);
   });
 </script>
 
