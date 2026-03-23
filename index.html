@@ -261,7 +261,11 @@ function renderTable(data) {
       <td>${c.location}</td>
       <td>${c.start_date} — ${c.end_date}</td>
       <td>${getStatus(c.start_date, c.end_date)}</td>
-      <td><a href="${c.link}" target="_blank">Visit</a></td>
+      <td>
+        ${c.link === "暂无"
+          ? "暂无"
+          : `<a href="${c.link}" target="_blank">Visit</a>`}
+      </td>
     `;
 
     table.appendChild(row);
