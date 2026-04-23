@@ -104,12 +104,26 @@
     "end_date": "2026-11-02",
     "link": "暂无"
   },
-    {
+  {
     "title": "第十六届相对论密度泛函前沿论坛",
     "location": "辽宁大连",
     "start_date": "2026-08-14",
     "end_date": "2026-08-20",
     "link": "https://indico.pku.edu.cn/event/78/"
+  },
+  {
+    "title": "Nuclear Physics in Astrophysics XII (NPA-XII)",
+    "location": "罗马尼亚",
+    "start_date": "2026-09-07",
+    "end_date": "2026-09-11",
+    "link": "https://indico.eli-np.ro/event/262/overview"
+  },
+  {
+    "title": "59th Zakopane Conference on Nuclear Physics",
+    "location": "波兰",
+    "start_date": "2026-08-30",
+    "end_date": "2026-09-06",
+    "link": "https://indico.ifj.edu.pl/event/1430/"
   },
   {
     "title": "The 13th International Conference on Direct Reactions with Exotic Beams (DREB2026)",
